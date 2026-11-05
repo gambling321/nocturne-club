@@ -6,7 +6,14 @@ export type GameId =
   | "hilo"
   | "plinko"
   | "baccarat"
-  | "wheel";
+  | "wheel"
+  | "mines"
+  | "crash"
+  | "limbo"
+  | "keno"
+  | "video-poker"
+  | "dragon-tiger"
+  | "coinflip";
 
 export type HistoryTone = "win" | "loss" | "neutral";
 

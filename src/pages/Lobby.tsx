@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, ArrowRight, CheckCircle2, Coins, Gamepad2, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowDown, ArrowRight, Coins, Gamepad2, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { LobbyScene } from "../components/LobbyScene";
 import { useTokens } from "../context/TokenContext";
@@ -7,67 +7,53 @@ import { formatTokens } from "../lib/format";
 import type { GameMeta } from "../types";
 
 const games: GameMeta[] = [
-  { id: "roulette", name: "Europäisches Roulette", kicker: "DER KLASSIKER", description: "Eine Null, echte Einsatzfelder und eine präzise animierte Kugel.", accent: "gold", icon: "◉", route: "/roulette" },
-  { id: "blackjack", name: "Blackjack", kicker: "21, OHNE HAST", description: "Zieh, bleib oder verdopple gegen den Dealer – mit klaren Regeln.", accent: "violet", icon: "A♠", route: "/blackjack" },
-  { id: "slots", name: "Aurora Slots", kicker: "DREI WALZEN", description: "Originale Neon-Symbole, sichtbare Gewinnlinie und ruhige Reel-Animation.", accent: "cyan", icon: "✦", route: "/slots" },
-  { id: "dice", name: "Dice Over / Under", kicker: "PRÄZISE CHANCE", description: "Wähle Ziel und Richtung. Chance und Multiplikator stehen immer offen da.", accent: "emerald", icon: "◆", route: "/dice" },
-  { id: "hilo", name: "Hi-Lo Atelier", kicker: "KARTE LESEN", description: "Tipp höher oder tiefer und zahle deine laufende Runde aus, wann du willst.", accent: "rose", icon: "↑↓", route: "/hilo" },
-  { id: "plinko", name: "Plinko Atrium", kicker: "KURVEN & GLÜCK", description: "Lass die Kugel durch das Pegboard fallen und wähle dein Risikoprofil.", accent: "gold", icon: "●", route: "/plinko" },
-  { id: "baccarat", name: "Baccarat", kicker: "CARTES DE NUIT", description: "Spieler, Bank oder Gleichstand – mit verständlicher Kartenauswertung.", accent: "violet", icon: "K♦", route: "/baccarat" },
-  { id: "wheel", name: "Lucky Wheel", kicker: "DAS FINALE", description: "Ein elegantes Rad, klare Segmente und nachvollziehbare Multiplikatoren.", accent: "cyan", icon: "✺", route: "/wheel" },
+  { id:"blackjack",name:"Blackjack",kicker:"DIE KUNST DER HAND",description:"Eine stille Partie am grünen Filz. Fünf Karten, ein Tisch, ein Moment.",accent:"gold",icon:"♠",route:"/blackjack" },
+  { id:"roulette",name:"Roulette",kicker:"DAS RAD DES ABENDS",description:"Messing, dunkles Holz und die ruhige Spannung vor dem letzten Fall.",accent:"gold",icon:"◉",route:"/roulette" },
+  { id:"slots",name:"Slots",kicker:"DIE GOLDENE WALZE",description:"Drei Walzen im polierten Gehäuse. Ein klarer Blick auf jede Gewinnlinie.",accent:"gold",icon:"✦",route:"/slots" },
+  { id:"dice",name:"Dice",kicker:"EIN WURF",description:"Elfenbein auf Casino-Filz. Wähle deine Seite und lies die Chance.",accent:"gold",icon:"⚄",route:"/dice" },
+  { id:"plinko",name:"Plinko",kicker:"DER WEG NACH UNTEN",description:"Eine Kugel, eine Wand aus Messingpins und viele mögliche Wege.",accent:"gold",icon:"•",route:"/plinko" },
+  { id:"baccarat",name:"Baccarat",kicker:"LE JEU",description:"Eine klassische Partie mit klaren Karten und ruhigem Tempo.",accent:"gold",icon:"K",route:"/baccarat" },
+  { id:"hilo",name:"Hi-Lo",kicker:"DIE NÄCHSTE KARTE",description:"Höher oder tiefer? Folge deiner Hand und zahle sie aus, wann du willst.",accent:"gold",icon:"A",route:"/hilo" },
+  { id:"wheel",name:"Wheel",kicker:"DAS LETZTE DREHEN",description:"Ein Rad aus zwölf Segmenten mit offen sichtbaren Multiplikatoren.",accent:"gold",icon:"✺",route:"/wheel" },
+  { id:"mines",name:"Mines",kicker:"FELD FÜR FELD",description:"Öffne Edelsteine, erhöhe den Wert und zahle vor der Mine aus.",accent:"gold",icon:"◆",route:"/mines" },
+  { id:"crash",name:"Crash",kicker:"BIS ZUM MOMENT",description:"Der Wert steigt – der Ausstieg liegt ganz bei dir.",accent:"gold",icon:"↗",route:"/crash" },
+  { id:"limbo",name:"Limbo",kicker:"ÜBER DEM ZIEL",description:"Setze einen Multiplikator und springe mit einem Wurf darüber.",accent:"gold",icon:"×",route:"/limbo" },
+  { id:"keno",name:"Keno",kicker:"ZEHN ZIEHUNGEN",description:"Markiere deine Zahlen und verfolge die stille Ziehung.",accent:"gold",icon:"10",route:"/keno" },
+  { id:"video-poker",name:"Video Poker",kicker:"FÜNF KARTEN",description:"Halte deine Hand und ziehe auf die beste Kombination.",accent:"gold",icon:"♣",route:"/video-poker" },
+  { id:"dragon-tiger",name:"Dragon Tiger",kicker:"ZWEI KARTEN",description:"Ein reduziertes Kartenduell zwischen Drache und Tiger.",accent:"gold",icon:"D",route:"/dragon-tiger" },
+  { id:"coinflip",name:"Coin Flip",kicker:"KOPF ODER ZAHL",description:"Eine klare Wahl, ein kurzer Wurf und ein offenes Ergebnis.",accent:"gold",icon:"◐",route:"/coinflip" },
 ];
+const featureGames=games.slice(0,5);
 
-export function Lobby() {
-  const { balance } = useTokens();
-  const reducedMotion = useReducedMotion();
-  const visibleGames = games;
+function FeatureScene({id}:{id:string}) { return <div className={`feature-art art-${id}`} aria-hidden="true">
+  {id==="blackjack"&&<><div className="art-table"/><div className="art-card card-one">A<span>♠</span></div><div className="art-card card-two">K<span>♣</span></div><div className="art-chip"/></>}
+  {id==="roulette"&&<><div className="art-wheel"><i/><b>NOCTURNE</b></div><div className="art-ball"/></>}
+  {id==="slots"&&<div className="art-slot"><div>✦</div><div>♛</div><div>◆</div><span/></div>}
+  {id==="dice"&&<><div className="art-felt"/><div className="art-die die-a">⚄</div><div className="art-die die-b">⚅</div></>}
+  {id==="plinko"&&<><div className="art-board">{Array.from({length:28},(_,i)=><i key={i}/>)}</div><div className="art-drop"/></>}
+</div>; }
 
-  return (
-    <main className="lobby-page">
-      <section className="lobby-hero">
-        <LobbyScene />
-        <div className="hero-noise" aria-hidden="true" />
-        <div className="hero-content content-width">
-          <motion.div initial={reducedMotion ? false : { opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="hero-copy">
-            <div className="private-label"><Sparkles size={14} /> PRIVATE GAME NIGHT</div>
-            <h1>Der Abend<br /><em>hat Niveau.</em></h1>
-            <p>NOCTURNE CLUB ist deine private Social-Casino-Lobby: acht kleine Spiele, ein gemeinsamer Tokenstand und absolut kein Echtgeld.</p>
-            <div className="hero-actions">
-              <a className="primary-button" href="#spiele">Lobby entdecken <ArrowDown size={17} /></a>
-              <div className="hero-token"><Coins size={18} /><span><b>{formatTokens(balance)} TOKEN</b><small>nur diese Sitzung</small></span></div>
-            </div>
-          </motion.div>
-          <motion.div className="hero-side-note" initial={reducedMotion ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55, duration: 0.7 }}>
-            <span className="status-light" /> SESSION AKTIV<br />Tokens werden beim Reload auf 1.000 gesetzt.
-          </motion.div>
-        </div>
-        <a href="#spiele" className="scroll-cue" aria-label="Zu den Spielen scrollen"><span /> Scrollen</a>
-      </section>
-
-      <section className="lobby-intro content-width" id="spiele">
-        <div><span className="eyebrow">DIE SPIELRÄUME</span><h2>Wähle deine<br /><em>Station.</em></h2></div>
-        <p>Beim Scrollen öffnet sich die Lobby Raum für Raum. Jeder Tisch hat eigene Regeln, transparente Auszahlungen und eine kleine Historie für diese Sitzung.</p>
-      </section>
-
-      <section className="game-stations content-width" aria-label="Spiele auswählen">
-        {visibleGames.map((game, index) => (
-          <motion.article key={game.id} className={`station-card accent-${game.accent}`} initial={reducedMotion ? false : { opacity: 0, y: 28 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.52, delay: (index % 2) * 0.06 }}>
-            <Link className="station-visual" to={game.route} aria-label={`${game.name} spielen`}><span className="station-orbit orbit-a" /><span className="station-orbit orbit-b" /><span className="station-icon">{game.icon}</span><span className="station-shine" /></Link>
-            <div className="station-copy"><span className="eyebrow">{game.kicker}</span><h3>{game.name}</h3><p>{game.description}</p><Link className="text-link" to={game.route}>Spielen <ArrowRight size={16} /></Link></div>
-            <span className="station-index">0{index + 1}</span>
-          </motion.article>
-        ))}
-      </section>
-
-      <section className="promise-section content-width">
-        <div className="promise-copy"><span className="eyebrow">GUT ZU WISSEN</span><h2>Gut spielen<br /><em>heißt entspannt spielen.</em></h2></div>
-        <div className="promise-list">
-          <div><ShieldCheck size={21} /><p><strong>Rein virtuell</strong><br />Keine Käufe, Konten, Auszahlungen oder Echtgeldwerte.</p></div>
-          <div><Coins size={21} /><p><strong>Einfach & lokal</strong><br />1.000 Tokens beim Reload, ohne Speicher, ohne Tracking.</p></div>
-          <div><Gamepad2 size={21} /><p><strong>Dein Tempo</strong><br />Kein Zeitdruck, keine Verknappung, keine Push-Nachrichten.</p></div>
-        </div>
-      </section>
-      <section className="lobby-closing content-width"><span>NOCTURNE CLUB / PRIVATE DEMO</span><h2>Ein Tisch. Ein Abend.<br /><em>Nur zum Spaß.</em></h2><p>Alle Ergebnisse entstehen lokal im Browser. Die Token haben keinen Wert außerhalb dieser Demo und werden nicht gespeichert.</p></section>
-    </main>
-  );
+export function Lobby(){
+ const {balance}=useTokens(); const reduced=useReducedMotion();
+ return <main className="lobby-page">
+  <section className="lobby-hero" id="top"><LobbyScene/><div className="hero-shade"/><div className="hero-content content-width">
+   <motion.div className="hero-copy" initial={reduced?false:{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{duration:.8}}>
+    <div className="private-label"><Sparkles size={13}/> EIN PRIVATER SPIELABEND</div><h1>Eine Nacht<br/>für <em>die Sinne.</em></h1>
+    <p>Willkommen im NOCTURNE CLUB. Nimm Platz, entdecke die Spielräume und genieße den Abend in deinem Tempo.</p>
+    <div className="hero-actions"><a className="primary-button" href="#blackjack">Den Club betreten <ArrowDown size={16}/></a><span className="hero-balance"><Coins size={16}/>{formatTokens(balance)} TOKEN</span></div>
+   </motion.div><div className="hero-scroll-hint"><span/>Ein ruhiger Abend beginnt weiter unten</div>
+  </div></section>
+  <div className="film-intro content-width"><span>NOCTURNE CLUB <i>·</i> MAISON DE JEU</span><p>Warmes Licht. Poliertes Holz. Der vertraute Klang einer Karte auf Filz.</p></div>
+  <section className="feature-reel" aria-label="Spielwelten">
+   {featureGames.map((game,index)=><article className={`feature-scene feature-${game.id}`} id={game.id} key={game.id}>
+    <div className="feature-stage"><FeatureScene id={game.id}/></div><div className={`feature-content content-width ${index%2?"align-right":""}`}>
+     <motion.div initial={reduced?false:{opacity:0,y:22}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:.35}} transition={{duration:.65}}>
+      <span className="feature-kicker">0{index+1} <i/> {game.kicker}</span><h2>{game.name}</h2><p>{game.description}</p><Link className="feature-cta" to={game.route}>Jetzt spielen <ArrowRight size={16}/></Link>
+     </motion.div>
+    </div><span className="feature-number">0{index+1}</span>
+   </article>)}
+  </section>
+  <section className="club-values content-width"><div><span className="feature-kicker">DER CLUB-GEDANKE</span><h2>Nur das Spiel.<br/><em>Nur für den Moment.</em></h2></div><div className="value-list"><p><ShieldCheck size={19}/><span><b>Virtuelle Tokens</b><br/>Ohne Echtgeldwert. Ohne Käufe. Ohne Auszahlungen.</span></p><p><Coins size={19}/><span><b>Ein lokaler Abend</b><br/>1.000 Tokens zum Start. Beim Reload beginnt die Sitzung neu.</span></p><p><Gamepad2 size={19}/><span><b>Spiel in deinem Tempo</b><br/>Kein Zeitdruck und kein Anreiz, weiterzuspielen.</span></p></div></section>
+  <section className="game-directory content-width" id="spiele"><div className="directory-heading"><span className="feature-kicker">ALLE SPIELRÄUME</span><h2>Finde deinen <em>Tisch.</em></h2><p>Wähle ein Spiel und tritt direkt ein.</p></div><div className="directory-grid">{games.map((game,index)=><Link className="directory-link" to={game.route} key={game.id}><span className="directory-index">0{index+1}</span><span>{game.name}</span><ArrowRight size={16}/></Link>)}</div><p className="token-disclaimer">Nur virtuelle Tokens – kein Echtgeldwert</p></section>
+ </main>
 }

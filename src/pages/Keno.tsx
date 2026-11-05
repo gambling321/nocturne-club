@@ -1,0 +1,18 @@
+import { useState } from "react";
+import { BetControls } from "../components/BetControls";
+import { GameLayout } from "../components/GameLayout";
+import { ResultBanner, type ResultKind } from "../components/ResultBanner";
+import { SessionHistory } from "../components/SessionHistory";
+import { useTokens } from "../context/TokenContext";
+import { formatTokens, payoutFor, sleep } from "../lib/format";
+import { secureInt } from "../lib/random";
+import type { HistoryItem } from "../types";
+const numbers = Array.from({ length: 40 }, (_, index) => index + 1);
+function kenoMultiplier(picks: number, hits: number) { if (!hits) return 0; return Number((hits === picks ? 3 + picks * .45 : hits / picks * 1.5).toFixed(2)); }
+
+export function Keno() {
+  const { balance, credit, placeBet } = useTokens(); const [bet, setBet] = useState(10); const [selected, setSelected] = useState<Set<number>>(new Set()); const [drawn, setDrawn] = useState<Set<number>>(new Set()); const [drawing, setDrawing] = useState(false); const [kind, setKind] = useState<ResultKind>("neutral"); const [message, setMessage] = useState("Wähle zwischen 1 und 10 Zahlen aus dem 40er-Feld."); const [history, setHistory] = useState<HistoryItem[]>([]);
+  const toggle = (number: number) => { if (drawing) return; setSelected((current) => { const next = new Set(current); if (next.has(number)) next.delete(number); else if (next.size < 10) next.add(number); return next; }); };
+  const play = async () => { if (!selected.size || drawing || !placeBet(bet)) return; const result = new Set<number>(); while (result.size < 10) result.add(secureInt(1, 40)); setDrawn(new Set()); setDrawing(true); setKind("neutral"); setMessage("Die zehn Keno-Zahlen werden gezogen …"); for (const number of result) { await sleep(100); setDrawn((current) => new Set(current).add(number)); } const hits = [...selected].filter((number) => result.has(number)).length; const multi = kenoMultiplier(selected.size, hits); const payout = payoutFor(bet, multi); if (payout) credit(payout); setKind(payout ? "win" : "loss"); setMessage(payout ? `${hits} Treffer · ×${multi.toFixed(2)}. ${formatTokens(payout)} TOKEN ausgezahlt.` : "Keine Treffer in dieser Runde."); setHistory((items) => [{ id: Date.now(), title: payout ? "Keno gewonnen" : "Keno ohne Treffer", detail: `${hits} von ${selected.size} Zahlen getroffen`, change: payout - bet, tone: payout ? "win" as const : "loss" as const }, ...items].slice(0, 5)); setDrawing(false); };
+  return <GameLayout eyebrow="40 ZAHLEN · 10 ZIEHUNGEN" title="Keno" description="Markiere deine Zahlen und beobachte, wie die Ziehung Treffer für Treffer sichtbar macht." rules={<ul><li>Markiere ein bis zehn Zahlen.</li><li>Pro Runde werden zehn Zahlen aus 40 gezogen.</li><li>Mehr Treffer erhöhen die Auszahlung deiner virtuellen Runde.</li></ul>}><div className="simple-game-table"><div className="keno-head"><span>{selected.size}/10 ausgewählt</span><button type="button" disabled={drawing} onClick={() => { setSelected(new Set()); setDrawn(new Set()); }}>Auswahl löschen</button></div><div className="keno-grid">{numbers.map((number) => <button key={number} type="button" disabled={drawing} onClick={() => toggle(number)} className={`${selected.has(number) ? "chosen" : ""} ${drawn.has(number) ? "drawn" : ""}`}>{number}</button>)}</div><ResultBanner kind={kind}>{message}</ResultBanner><div className="game-action-area"><BetControls bet={bet} onBetChange={setBet} balance={balance} disabled={drawing}/><button className="primary-action" type="button" onClick={play} disabled={drawing || !selected.size || balance < bet}>{drawing ? "Ziehung läuft …" : `${formatTokens(bet)} TOKEN · ziehen`}</button></div><SessionHistory items={history}/></div></GameLayout>;
+}
