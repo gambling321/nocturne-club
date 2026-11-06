@@ -100,7 +100,7 @@ export function Dice() {
       <div className="dice-table">
         <section className={`dice-display ${isRolling ? "is-rolling" : ""}`} aria-label="Würfelergebnis">
           <span className="dice-display-label">ERGEBNIS</span>
-          <strong aria-live="polite">{rolled ?? "—"}</strong>
+          <div className="dice-cube-stage" aria-live="polite"><div className="dice-cube"><span className="dice-cube-face front">{rolled ?? "⚄"}</span><span className="dice-cube-face back">⚂</span><span className="dice-cube-face right">⚅</span><span className="dice-cube-face left">⚀</span><span className="dice-cube-face top">⚄</span><span className="dice-cube-face bottom">⚁</span></div></div>
           <span className="dice-range">1 — 100</span>
         </section>
 

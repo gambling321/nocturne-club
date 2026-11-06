@@ -34,6 +34,7 @@ export function Plinko() {
   const [isDropping, setIsDropping] = useState(false);
   const [landingIndex, setLandingIndex] = useState<number | null>(null);
   const [dropId, setDropId] = useState(0);
+  const [ballPath, setBallPath] = useState<string[]>(["50%"]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [feedback, setFeedback] = useState<{ kind: ResultKind; message: string }>({
     kind: "neutral",
@@ -61,6 +62,16 @@ export function Plinko() {
 
     const index = secureInt(0, multipliers.length - 1);
     const multiplier = multipliers[index]!;
+    const directions = Array.from({ length: multipliers.length - 1 }, (_, step) => step < index);
+    for (let step = directions.length - 1; step > 0; step -= 1) {
+      const swap = secureInt(0, step);
+      [directions[step], directions[swap]] = [directions[swap]!, directions[step]!];
+    }
+    let rights = 0;
+    setBallPath(["50%", ...directions.map((right, step) => {
+      if (right) rights += 1;
+      return `${50 + ((rights * 2 - (step + 1)) / (multipliers.length - 1)) * 46}%`;
+    })]);
     setLandingIndex(index);
     setDropId((value) => value + 1);
     setIsDropping(true);
@@ -122,18 +133,18 @@ export function Plinko() {
 
         <div className="plinko-board" aria-label="Plinko Feld mit Multiplikatoren">
           <div className="plinko-pegs" aria-hidden="true">
-            {Array.from({ length: 8 }, (_, row) => (
+            {Array.from({ length: 12 }, (_, row) => (
               <div className="plinko-peg-row" key={row}>
-                {Array.from({ length: row + 3 }, (_, column) => <i className="plinko-peg" key={column} />)}
+                {Array.from({ length: row + 1 }, (_, column) => <i className="plinko-peg" key={column} />)}
               </div>
             ))}
           </div>
           <motion.div
             key={dropId}
             className="plinko-ball"
-            initial={{ left: "50%", top: "4%", opacity: isDropping ? 1 : 0 }}
-            animate={isDropping ? { left: `${landingPosition}%`, top: "75%", opacity: 1 } : { left: `${landingPosition}%`, top: "75%", opacity: 0 }}
-            transition={{ duration: prefersReducedMotion() ? 0.01 : 1.15, ease: "easeInOut" }}
+            initial={{ left: "50%", top: "4%", opacity: 0 }}
+            animate={isDropping ? { left: ballPath, top: ballPath.map((_, index) => `${4 + index * 5.8}%`), opacity: 1 } : { left: `${landingPosition}%`, top: "75%", opacity: 0 }}
+            transition={{ duration: prefersReducedMotion() ? 0.01 : 1.8, ease: "linear" }}
             aria-hidden="true"
           />
           <div className="plinko-multipliers">

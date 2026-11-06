@@ -35,7 +35,7 @@ export function Lobby(){
    </motion.div><div className="hero-scroll-hint"><span/>Ein ruhiger Abend beginnt weiter unten</div>
   </div></section>
   <div className="film-intro content-width"><span>NOCTURNE CLUB <i>·</i> MAISON DE JEU</span><p>Warmes Licht. Poliertes Holz. Der vertraute Klang einer Karte auf Filz.</p></div>
-  <LobbyJourney games={games.slice(0,8)}/>
+  <div id="blackjack"><LobbyJourney games={games.slice(0,8)}/></div>
   <section className="club-values content-width"><div><span className="feature-kicker">DER CLUB-GEDANKE</span><h2>Nur das Spiel.<br/><em>Nur für den Moment.</em></h2></div><div className="value-list"><p><ShieldCheck size={19}/><span><b>Virtuelle Tokens</b><br/>Ohne Echtgeldwert. Ohne Käufe. Ohne Auszahlungen.</span></p><p><Coins size={19}/><span><b>Ein lokaler Abend</b><br/>1.000 Tokens zum Start. Beim Reload beginnt die Sitzung neu.</span></p><p><Gamepad2 size={19}/><span><b>Spiel in deinem Tempo</b><br/>Kein Zeitdruck und kein Anreiz, weiterzuspielen.</span></p></div></section>
   <section className="game-directory content-width" id="spiele"><div className="directory-heading"><span className="feature-kicker">ALLE SPIELRÄUME</span><h2>Finde deinen <em>Tisch.</em></h2><p>Wähle ein Spiel und tritt direkt ein.</p></div><div className="directory-grid">{games.map((game,index)=><Link className="directory-link" to={game.route} key={game.id}><span className="directory-index">0{index+1}</span><span>{game.name}</span><ArrowRight size={16}/></Link>)}</div><p className="token-disclaimer">Nur virtuelle Tokens – kein Echtgeldwert</p></section>
  </main>

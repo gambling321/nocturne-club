@@ -65,9 +65,9 @@ export function Slots() {
     setIsSpinning(true);
     setResultKind("neutral");
     setMessage("Die Walzen drehen sich …");
-    for (let tick = 0; tick < 5; tick += 1) {
+    for (let tick = 0; tick < 18; tick += 1) {
       setReels([securePick(SLOT_SYMBOLS), securePick(SLOT_SYMBOLS), securePick(SLOT_SYMBOLS)]);
-      await sleep(100);
+      await sleep(75);
     }
 
     const finalReels: SlotSymbol[] = [
@@ -77,7 +77,7 @@ export function Slots() {
     ];
     for (let reel = 0; reel < finalReels.length; reel += 1) {
       setReels((current) => current.map((symbol, index) => (index <= reel ? finalReels[index]! : symbol)));
-      await sleep(280);
+      await sleep(520);
     }
 
     const outcome = resultFor(finalReels);

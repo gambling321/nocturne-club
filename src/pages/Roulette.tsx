@@ -25,6 +25,10 @@ const numberGrid = [
   [1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34],
 ];
 
+const rouletteOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26];
+const rouletteStep = 360 / rouletteOrder.length;
+const rouletteBackground = `conic-gradient(from -${rouletteStep / 2}deg, ${rouletteOrder.map((number, index) => `${number === 0 ? "#147247" : RED_NUMBERS.has(number) ? "#922733" : "#171c1a"} ${index * rouletteStep}deg ${(index + 1) * rouletteStep}deg`).join(",")})`;
+
 function selectionLabel(selection: BetSelection): string {
   switch (selection.kind) {
     case "number":
@@ -109,8 +113,14 @@ export function Roulette() {
     setResultKind("neutral");
     setMessage("Das Rad dreht sich …");
     setWinningNumber(null);
-    setWheelDegrees((current) => current + 1440 + secureInt(0, 359));
-    await sleep(1500);
+    const pocketIndex = rouletteOrder.indexOf(landedOn);
+    setWheelDegrees((current) => {
+      const normalized = ((current % 360) + 360) % 360;
+      const desired = (360 - pocketIndex * (360 / rouletteOrder.length)) % 360;
+      const alignment = ((desired - normalized) % 360 + 360) % 360;
+      return current + 1800 + alignment;
+    });
+    await sleep(5200);
 
     const won = winsSelection(selection, landedOn);
     const payout = won ? payoutFor(stake, selectedMultiplier) : 0;
@@ -157,9 +167,13 @@ export function Roulette() {
           <div className="roulette-pointer" aria-hidden="true">◆</div>
           <div
             className={`roulette-wheel ${isSpinning ? "spinning" : ""}`}
-            style={{ transform: `rotate(${wheelDegrees}deg)` }}
+            style={{ transform: `rotate(${wheelDegrees}deg)`, background: rouletteBackground }}
             aria-label={isSpinning ? "Rouletterad dreht sich" : "Rouletterad"}
           >
+            {rouletteOrder.map((number, index) => {
+              const angle = index * rouletteStep;
+              return <span key={number} className={`roulette-pocket ${number === 0 ? "green" : RED_NUMBERS.has(number) ? "red" : "black"}`} style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-138px) rotate(${-angle}deg)` }}>{number}</span>;
+            })}
             <div className="roulette-wheel-inner">
               <span>{winningNumber ?? "✦"}</span>
               <small>{winningNumber === null ? "NOCTURNE" : numberDescription(winningNumber)}</small>

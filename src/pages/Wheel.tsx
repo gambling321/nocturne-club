@@ -81,7 +81,7 @@ export function Wheel() {
     setRotation(rotation + 1440 + delta);
     setIsSpinning(true);
     setFeedback({ kind: "neutral", message: "Das Rad dreht sich …" });
-    await sleep(prefersReducedMotion() ? 100 : 3500);
+    await sleep(prefersReducedMotion() ? 100 : 5200);
 
     const payout = payoutFor(bet, selected.multiplier);
     if (payout > 0) credit(payout);
