@@ -1,25 +1,15 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { useScroll, useTransform, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 function Room() {
   const group = useRef<THREE.Group>(null);
-  const { scrollYProgress } = useScroll();
-  const rotate = useTransform(scrollYProgress, [0, 1], [0.05, 1.8]);
-  const rise = useTransform(scrollYProgress, [0, 1], [0, 1.4]);
-  useEffect(() => {
-    const update = () => {
-      if (!group.current) return;
-      group.current.rotation.y = rotate.get();
-      group.current.position.y = rise.get();
-    };
-    const a = rotate.on("change", update);
-    const b = rise.on("change", update);
-    return () => { a(); b(); };
-  }, [rotate, rise]);
   useFrame(({ clock }) => {
-    if (group.current) group.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.18) * 0.012;
+    if (group.current) {
+      group.current.rotation.x = Math.sin(clock.getElapsedTime() * 0.18) * 0.012;
+      group.current.rotation.y = .05 + Math.sin(clock.getElapsedTime() * 0.12) * .012;
+    }
   });
   return <group ref={group}>
     <ambientLight intensity={0.7} />
