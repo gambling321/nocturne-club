@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import * as THREE from "three";
+import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { GameMeta } from "../types";
 
 function cardFace(rank: string, suit: string) {
@@ -17,30 +18,30 @@ function cardFace(rank: string, suit: string) {
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
 }
 
+function cardBackFace() {
+  const canvas=document.createElement("canvas");canvas.width=256;canvas.height=384;const ctx=canvas.getContext("2d")!;
+  ctx.fillStyle="#10261d";ctx.fillRect(0,0,256,384);ctx.strokeStyle="#c7a25f";ctx.lineWidth=7;ctx.strokeRect(10,10,236,364);ctx.lineWidth=2;ctx.strokeRect(19,19,218,346);
+  ctx.save();ctx.beginPath();ctx.rect(24,24,208,336);ctx.clip();ctx.strokeStyle="#b8995b66";ctx.lineWidth=2;
+  for(let x=-200;x<400;x+=22){ctx.beginPath();ctx.moveTo(x,24);ctx.lineTo(x+336,360);ctx.stroke();ctx.beginPath();ctx.moveTo(x,360);ctx.lineTo(x+336,24);ctx.stroke();}
+  ctx.restore();ctx.beginPath();ctx.arc(128,192,56,0,Math.PI*2);ctx.strokeStyle="#d6b676";ctx.lineWidth=4;ctx.stroke();ctx.fillStyle="#e2c786";ctx.font="bold 67px Georgia";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("♠",128,195);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+
+function BeveledBox({ args, position = [0,0,0], color, metalness = .1, roughness = .35, castShadow = false }: { args: [number,number,number,number,number]; position?: [number,number,number]; color: THREE.ColorRepresentation; metalness?: number; roughness?: number; castShadow?: boolean }) {
+  const [width,height,depth,radius,segments]=args;
+  const geometry=useMemo(()=>new RoundedBoxGeometry(width,height,depth,radius,segments),[width,height,depth,radius,segments]);
+  return <mesh geometry={geometry} position={position} castShadow={castShadow}><meshStandardMaterial color={color} metalness={metalness} roughness={roughness}/></mesh>;
+}
+
 function Card({ rank, suit, position, rotation = [0, 0, 0] as [number, number, number] }: { rank: string; suit: string; position: [number, number, number]; rotation?: [number, number, number] }) {
   const texture = useMemo(() => cardFace(rank, suit), [rank, suit]);
+  const back = useMemo(cardBackFace, []);
   return <mesh position={position} rotation={rotation} castShadow>
     <boxGeometry args={[1.05, 1.52, .035]}/>
     <meshStandardMaterial color="#ddc99b" roughness={.42} metalness={.12}/>
     <mesh position={[0, 0, .021]}><planeGeometry args={[.99, 1.46]}/><meshBasicMaterial map={texture} toneMapped={false}/></mesh>
-    <mesh position={[0, 0, -.021]} rotation={[0, Math.PI, 0]}><planeGeometry args={[.99, 1.46]}/><meshStandardMaterial color="#1a2a22" roughness={.6}/></mesh>
+    <mesh position={[0, 0, -.021]} rotation={[0, Math.PI, 0]}><planeGeometry args={[.99, 1.46]}/><meshBasicMaterial map={back} toneMapped={false}/></mesh>
   </mesh>;
-}
-
-function reelTexture(seed: number) {
-  const canvas = document.createElement("canvas"); canvas.width = 256; canvas.height = 768;
-  const ctx = canvas.getContext("2d")!;
-  const symbols = [["7", "★", "BELL"], ["CHERRY", "7", "DIAMOND"], ["BAR", "BELL", "7"]][seed]!;
-  ctx.fillStyle = "#f0e5c8"; ctx.fillRect(0, 0, 256, 768);
-  for (let row = 0; row < 3; row += 1) {
-    const top = row * 256; ctx.fillStyle = row === 1 ? "#fff8e8" : "#e5d7b9"; ctx.fillRect(6, top + 6, 244, 244);
-    ctx.strokeStyle = "#b08a49"; ctx.lineWidth = 5; ctx.strokeRect(8, top + 8, 240, 240);
-    const label = symbols[row]!; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillStyle = label === "7" ? "#a33128" : "#253a2b";
-    ctx.font = label.length > 3 ? "bold 34px Georgia" : "bold 142px Georgia";
-    ctx.fillText(label, 128, top + 128);
-  }
-  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapT = THREE.RepeatWrapping; texture.needsUpdate = true; return texture;
 }
 
 function marqueeTexture() {
@@ -52,18 +53,68 @@ function marqueeTexture() {
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
 }
 
-function CasinoTable({ position = [0,0,0] as [number,number,number], roulette = false }: { position?: [number,number,number]; roulette?: boolean }) {
+function rouletteLayoutTexture() {
+  const canvas=document.createElement("canvas");canvas.width=1024;canvas.height=384;const ctx=canvas.getContext("2d")!;
+  ctx.fillStyle="#17412e";ctx.fillRect(0,0,1024,384);ctx.strokeStyle="#d2b06b";ctx.lineWidth=5;ctx.strokeRect(8,8,1008,368);
+  const reds=new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  const left=94,top=20,width=900/12,height=344/3;
+  for(let row=0;row<3;row++)for(let col=0;col<12;col++){
+    const n=col*3+(3-row);const x=left+col*width,y=top+row*height;
+    ctx.fillStyle=reds.has(n)?"#9c3027":"#141814";ctx.fillRect(x,y,width,height);ctx.strokeStyle="#d9c18d";ctx.lineWidth=2;ctx.strokeRect(x,y,width,height);
+    ctx.fillStyle="#f2e7cb";ctx.font="bold 26px Georgia";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(n),x+width/2,y+height/2);
+  }
+  ctx.fillStyle="#17503a";ctx.fillRect(20,top,68,height*3);ctx.strokeStyle="#d9c18d";ctx.strokeRect(20,top,68,height*3);ctx.save();ctx.translate(54,top+height*1.5);ctx.rotate(-Math.PI/2);ctx.fillStyle="#f2e7cb";ctx.font="bold 25px Georgia";ctx.textAlign="center";ctx.fillText("0",0,0);ctx.restore();
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+
+function slotSymbolTexture(label: string, accent: string) {
+  const canvas=document.createElement("canvas");canvas.width=256;canvas.height=256;const ctx=canvas.getContext("2d")!;
+  const gradient=ctx.createLinearGradient(0,0,256,256);gradient.addColorStop(0,"#f8f0dd");gradient.addColorStop(1,"#cdbd9d");ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+  ctx.strokeStyle="#b18c4d";ctx.lineWidth=7;ctx.strokeRect(9,9,238,238);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.strokeRect(19,19,218,218);
+  ctx.fillStyle=accent;ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=label.length>3?"bold 36px Georgia":"bold 112px Georgia";ctx.shadowColor="#6a4526aa";ctx.shadowBlur=5;ctx.fillText(label,128,128);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+
+function wheelLabelTexture(label: string) {
+  const canvas=document.createElement("canvas");canvas.width=256;canvas.height=128;const ctx=canvas.getContext("2d")!;
+  ctx.fillStyle="#f7e9c8";ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="bold 58px Georgia";ctx.shadowColor="#000";ctx.shadowBlur=5;ctx.fillText(label,128,66);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+
+function CasinoTable({ position = [0,0,0] as [number,number,number] }: { position?: [number,number,number] }) {
   return <group position={position}>
     <mesh position={[0,-.08,0]} scale={[1.8,1,.96]} castShadow><cylinderGeometry args={[1,.92,.22,64]}/><meshStandardMaterial color="#153f2c" roughness={.8}/></mesh>
     <mesh position={[0,-.2,0]} scale={[1.8,1,.96]}><cylinderGeometry args={[1.08,1.08,.16,64]}/><meshStandardMaterial color="#4c321c" metalness={.55} roughness={.35}/></mesh>
     <mesh position={[0,-.82,0]}><cylinderGeometry args={[.16,.2,.95,16]}/><meshStandardMaterial color="#5d4023" metalness={.6}/></mesh>
-    {!roulette && <mesh position={[0,.045,0]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[1.25,.018,8,64]}/><meshStandardMaterial color="#c3a15d" metalness={.82}/></mesh>}
-    {roulette && <group position={[.47,.12,0]} rotation={[-Math.PI/2,0,0]}><mesh><cylinderGeometry args={[.8,.8,.13,48]}/><meshStandardMaterial color="#a98444" metalness={.86}/></mesh><mesh position={[0,.071,0]}><cylinderGeometry args={[.68,.68,.025,24]}/><meshStandardMaterial color="#163928"/></mesh>{Array.from({length:12},(_,i)=><mesh key={i} rotation={[0,0,i*Math.PI/6]} position={[0,.09,0]}><torusGeometry args={[.57,.018,6,12,Math.PI/6]}/><meshStandardMaterial color={i%2?"#a7382d":"#d0b26f"} metalness={.65}/></mesh>)}<mesh position={[0,.12,0]}><cylinderGeometry args={[.17,.17,.08,24]}/><meshStandardMaterial color="#d0ad69" metalness={.86}/></mesh></group>}
+    <mesh position={[0,.045,0]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[1.25,.018,8,64]}/><meshStandardMaterial color="#c3a15d" metalness={.72} roughness={.3}/></mesh>
   </group>;
 }
 
-function RouletteTable({ index }: { index: number }) {
-  return <group position={[0,0,-index*10]}><CasinoTable roulette/><mesh position={[0,1.2,0]} rotation={[.12,0,0]}><boxGeometry args={[2.4,.06,.05]}/><meshStandardMaterial color="#c5a360" metalness={.75}/></mesh></group>;
+function rouletteTexture() {
+  const canvas = document.createElement("canvas"); canvas.width = 1024; canvas.height = 1024;
+  const ctx = canvas.getContext("2d")!; ctx.translate(512,512);
+  const reds = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+  for(let n=0;n<37;n++){const a=(n/37)*Math.PI*2-Math.PI/2,b=((n+1)/37)*Math.PI*2-Math.PI/2;ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,480,a,b);ctx.closePath();ctx.fillStyle=n===0?"#174b35":reds.has(n)?"#992e25":"#171815";ctx.fill();ctx.strokeStyle="#d5b875";ctx.lineWidth=3;ctx.stroke();ctx.save();ctx.rotate((a+b)/2);ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle="#f6e8c7";ctx.font="bold 25px Georgia";ctx.fillText(String(n),0,-440);ctx.restore();}
+  for(const radius of [330,270,205,135]){ctx.beginPath();ctx.arc(0,0,radius,0,Math.PI*2);ctx.strokeStyle="#dfbd72";ctx.lineWidth=5;ctx.stroke();}
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
+}
+
+function RouletteTable({ index, progress }: { index: number; progress: { get: () => number } }) {
+  const wheel=useRef<THREE.Group>(null);const ball=useRef<THREE.Mesh>(null);const felt=useMemo(rouletteTexture,[]);const layout=useMemo(rouletteLayoutTexture,[]);
+  useFrame(()=>{const center=(index+1)/9;const phase=THREE.MathUtils.clamp((progress.get()-(center-.055))/.11,0,1);if(wheel.current)wheel.current.rotation.y=THREE.MathUtils.smoothstep(phase,0,1)*Math.PI*5;if(ball.current){const angle=.2-phase*Math.PI*11;ball.current.position.set(.47+Math.cos(angle)*.65,.27+Math.sin(phase*Math.PI)*.045,Math.sin(angle)*.65);}});
+  return <group position={[2.3,-.9,-index*10]} scale={1.22}>
+    <CasinoTable/>
+    <mesh position={[-.66,.042,.38]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[1.58,.68]}/><meshBasicMaterial map={layout} toneMapped={false}/></mesh>
+    <mesh position={[.47,.164,0]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.78,96]}/><meshBasicMaterial map={felt} toneMapped={false}/></mesh>
+    <mesh position={[.47,.095,0]}><cylinderGeometry args={[.8,.84,.13,96]}/><meshStandardMaterial color="#59391e" metalness={.56} roughness={.27}/></mesh>
+    <group ref={wheel} position={[.47,.17,0]}>
+      <mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.8,.055,12,96]}/><meshStandardMaterial color="#dbb568" metalness={.78} roughness={.25}/></mesh>
+      <mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.54,.033,10,72]}/><meshStandardMaterial color="#d5ae63" metalness={.7} roughness={.28}/></mesh>
+      <mesh position={[0,.025,0]}><cylinderGeometry args={[.19,.24,.09,32]}/><meshStandardMaterial color="#d4ac62" metalness={.72}/></mesh>
+      <mesh position={[0,.09,0]}><sphereGeometry args={[.07,18,18]}/><meshStandardMaterial color="#fff0d0" metalness={.52} roughness={.18}/></mesh>
+    </group>
+    <mesh ref={ball}><sphereGeometry args={[.052,20,20]}/><meshStandardMaterial color="#fff0d0" metalness={.42} roughness={.15} emissive="#fff0d0" emissiveIntensity={.12}/></mesh>
+  </group>;
 }
 
 function ScrollCards({ progress, index, baccarat = false }: { progress: { get: () => number }; index: number; baccarat?: boolean }) {
@@ -77,8 +128,8 @@ function ScrollCards({ progress, index, baccarat = false }: { progress: { get: (
       card.position.z = Math.abs(offset) * -.12 + spring * (i === 1 ? .85 : .15); card.rotation.z = offset * (-.18 - fan * .48); card.rotation.x = spring * (i === 1 ? -.3 : .08);
     });
   });
-  return <group position={[0, .2, -index * 10]}>
-    {index === 0 || index === 6 || baccarat ? <CasinoTable position={[0,-.72,0]} /> : null}
+  return <group position={[2.3, -.35, -index * 10]}>
+    {index === 0 || index === 6 || baccarat ? <CasinoTable position={[0,-.85,0]} /> : null}
     <group ref={group}>
       <Card rank={baccarat ? "9" : index === 6 ? "7" : "A"} suit={baccarat ? "♣" : "♠"} position={[-.32, 0, 0]}/>
       <Card rank={baccarat ? "K" : index === 6 ? "K" : "Q"} suit={baccarat ? "♥" : "♦"} position={[0, 0, .03]}/>
@@ -90,97 +141,149 @@ function ScrollCards({ progress, index, baccarat = false }: { progress: { get: (
 function Dice({ index, progress }: { index: number; progress: { get: () => number } }) {
   const ref = useRef<THREE.Group>(null);
   useFrame((_, delta) => { if (!ref.current) return; const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .055) / .11, 0, 1); ref.current.rotation.x = THREE.MathUtils.damp(ref.current.rotation.x, local * Math.PI * 2.5, 6, delta); ref.current.rotation.y = THREE.MathUtils.damp(ref.current.rotation.y, local * Math.PI * 3, 6, delta); ref.current.position.y = -.35 + Math.sin(local * Math.PI) * 1.15; });
-  return <group ref={ref} position={[0, -.35, -index * 10]}><mesh castShadow><boxGeometry args={[1.35, 1.35, 1.35]}/><meshStandardMaterial color="#eee4cc" roughness={.28}/></mesh><mesh position={[0, 0, .69]}><planeGeometry args={[.9,.9]}/><meshBasicMaterial color="#382a1a"/></mesh></group>;
+  return <group position={[2.3,0,-index*10]}>
+    <mesh position={[0,-1.72,0]}><cylinderGeometry args={[.72,.9,1.56,48]}/><meshStandardMaterial color="#30231a" metalness={.46} roughness={.3}/></mesh>
+    <mesh position={[0,-.9,0]}><cylinderGeometry args={[1.05,.96,.16,48]}/><meshStandardMaterial color="#ba9655" metalness={.72} roughness={.25}/></mesh>
+    <mesh ref={ref} position={[0,-.35,0]} castShadow><boxGeometry args={[1.35,1.35,1.35]}/><meshStandardMaterial color="#eee4cc" roughness={.24}/></mesh>
+  </group>;
 }
 
 function Slots({ index, progress }: { index: number; progress: { get: () => number } }) {
   const reels = useRef<THREE.Group>(null);
-  const textures = useMemo(() => [0,1,2].map(reelTexture), []);
+  const cabinet = useMemo(() => new RoundedBoxGeometry(3.45, 4.8, 1.3, .18, 5), []);
+  const reelSymbols = useMemo(() => [
+    ["7", "CHERRY", "BAR", "BELL", "7", "DIAMOND"],
+    ["BELL", "7", "DIAMOND", "CHERRY", "BAR", "7"],
+    ["BAR", "CHERRY", "7", "DIAMOND", "BELL", "7"],
+  ].map((symbols) => symbols.map((symbol) => slotSymbolTexture(symbol, symbol === "7" ? "#a02e24" : "#203f31"))), []);
   const marquee = useMemo(marqueeTexture, []);
-  useFrame((_, delta) => {
-    const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .06) / .12, 0, 1);
-    if (reels.current) reels.current.children.forEach((reel, i) => { const spin = Math.max(0, 1 - Math.abs(local - (.32 + i * .13)) * 4); const barrel = reel.children[0]; if (barrel) barrel.rotation.x = THREE.MathUtils.damp(barrel.rotation.x, spin * Math.PI * 7, 5, delta); textures[i]!.offset.y = (spin * local * (i + 2)) % 1; });
+  useFrame(() => {
+    const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((progress.get() - (center - .065)) / .13, 0, 1);
+    reels.current?.children.forEach((reel, i) => {
+      const phase = THREE.MathUtils.clamp((local - i * .08) / .76, 0, 1);
+      const eased = 1 - Math.pow(1 - phase, 3);
+      reel.rotation.x = eased * Math.PI * 12;
+    });
   });
-  return <group position={[0, .05, -index * 10]} rotation={[0,-.12,0]}>
-    {/* Carved cabinet shell and stepped base */}
-    <mesh position={[0,0,0]} castShadow><boxGeometry args={[3.35,4.7,1.15]}/><meshStandardMaterial color="#4b2412" metalness={.2} roughness={.3}/></mesh>
-    <mesh position={[0,-2.13,.1]} castShadow><boxGeometry args={[3.75,.45,1.42]}/><meshStandardMaterial color="#7b4c22" metalness={.58} roughness={.27}/></mesh>
-    <mesh position={[0,-2.4,.08]}><boxGeometry args={[3.25,.18,1.22]}/><meshStandardMaterial color="#bd9854" metalness={.82} roughness={.23}/></mesh>
-    {/* Bright marquee and trim make the silhouette read as a casino slot cabinet */}
-    <mesh position={[0,1.77,.61]}><boxGeometry args={[2.92,.78,.12]}/><meshStandardMaterial color="#1b120b" metalness={.35}/></mesh>
-    <mesh position={[0,1.77,.685]}><planeGeometry args={[2.72,.62]}/><meshBasicMaterial map={marquee} toneMapped={false}/></mesh>
-    {[-1.48,1.48].map((x)=><mesh key={x} position={[x,0,.61]}><boxGeometry args={[.13,3.65,.14]}/><meshStandardMaterial color="#d2a853" metalness={.88} roughness={.2}/></mesh>)}
-    <mesh position={[0,2.25,.55]}><boxGeometry args={[2.15,.2,.32]}/><meshStandardMaterial color="#c39b52" metalness={.86}/></mesh>
-    {/* Recessed reel window, brass bezels, glass and three readable symbol reels */}
-    <mesh position={[0,.02,.61]}><boxGeometry args={[2.86,2.13,.16]}/><meshStandardMaterial color="#c09b57" metalness={.82} roughness={.24}/></mesh>
-    <mesh position={[0,.02,.715]}><boxGeometry args={[2.65,1.92,.1]}/><meshStandardMaterial color="#17140f" metalness={.1} roughness={.4}/></mesh>
-    <group ref={reels} position={[0,.02,.79]}>
-      {[-.84,0,.84].map((x,i)=><group key={i} position={[x,0,0]}>
-        <mesh rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.55,.55,.68,40,1,true]}/><meshStandardMaterial color="#c8a45f" metalness={.78} roughness={.25}/></mesh>
-        <mesh position={[0,0,.12]}><planeGeometry args={[.77,1.72]}/><meshBasicMaterial map={textures[i]} toneMapped={false}/></mesh>
-        <mesh position={[0,0,.2]}><planeGeometry args={[.79,1.78]}/><meshPhysicalMaterial color="#fff3d5" transparent opacity={.1} roughness={.08} metalness={.12}/></mesh>
+  return <group position={[2.35,0,-index*10]} rotation={[0,-.08,0]} scale={1.04}>
+    <mesh geometry={cabinet} castShadow receiveShadow><meshStandardMaterial color="#281a12" metalness={.16} roughness={.32}/></mesh>
+    <BeveledBox position={[0,0,.64]} args={[3.12,4.48,.12,.12,4]} color="#512d19" metalness={.22} roughness={.3}/>
+    <BeveledBox position={[0,-2.16,.12]} args={[3.72,.48,1.48,.16,5]} color="#633c20" metalness={.42} roughness={.29} castShadow/>
+    <BeveledBox position={[0,-2.43,.12]} args={[3.22,.16,1.28,.07,4]} color="#bd9854" metalness={.74} roughness={.27}/>
+    <BeveledBox position={[0,1.77,.72]} args={[2.96,.78,.18,.11,4]} color="#17120c" metalness={.34} roughness={.28}/>
+    <mesh position={[0,1.77,.82]}><planeGeometry args={[2.7,.59]}/><meshBasicMaterial map={marquee} toneMapped={false}/></mesh>
+    <BeveledBox position={[0,2.24,.55]} args={[2.42,.18,.42,.08,4]} color="#c39b52" metalness={.77} roughness={.24}/>
+    {/* Three separate, curved symbol bands rotate on the same axis as real slot reels. */}
+    <BeveledBox position={[0,.12,.72]} args={[2.88,2.08,.2,.14,5]} color="#c09b57" metalness={.7} roughness={.26}/>
+    <BeveledBox position={[0,.12,.84]} args={[2.69,1.9,.11,.1,4]} color="#0b0d0b" metalness={.18} roughness={.26}/>
+    <group ref={reels} position={[0,.12,.94]}>
+      {[-.83,0,.83].map((x,reelIndex)=><group key={x} position={[x,0,0]}>
+        <mesh rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.56,.56,.62,48]}/><meshStandardMaterial color="#b58c4c" metalness={.53} roughness={.3}/></mesh>
+        {reelSymbols[reelIndex]!.map((texture,symbolIndex)=>{
+          const angle=symbolIndex*Math.PI/3;
+          return <mesh key={symbolIndex} position={[0,.555*Math.sin(angle),.555*Math.cos(angle)]} rotation={[-angle,0,0]}>
+            <planeGeometry args={[.58,.58]}/><meshBasicMaterial map={texture} toneMapped={false}/>
+          </mesh>;
+        })}
       </group>)}
     </group>
-    <mesh position={[0,-1.13,.65]}><boxGeometry args={[2.8,.24,.15]}/><meshStandardMaterial color="#d3aa5c" metalness={.86}/></mesh>
-    <mesh position={[0,-1.13,.76]}><boxGeometry args={[2.36,.08,.04]}/><meshStandardMaterial color="#fff1bf" emissive="#c89437" emissiveIntensity={1.1}/></mesh>
-    {/* Right-hand lever, cast handle, coin slot and payout cup */}
-    <group position={[1.83,.48,.02]}><mesh position={[0,.28,0]} rotation={[0,0,-.22]}><cylinderGeometry args={[.075,.085,.85,16]}/><meshStandardMaterial color="#d5ad61" metalness={.91}/></mesh><mesh position={[-.1,.72,0]}><sphereGeometry args={[.22,24,24]}/><meshStandardMaterial color="#efe1c0" metalness={.25} roughness={.2}/></mesh><mesh position={[0,-.18,0]}><cylinderGeometry args={[.22,.2,.14,24]}/><meshStandardMaterial color="#b5863d" metalness={.88}/></mesh></group>
-    <mesh position={[0,-1.58,.72]}><boxGeometry args={[1.58,.38,.44]}/><meshStandardMaterial color="#322014" metalness={.34} roughness={.3}/></mesh>
-    <mesh position={[0,-1.73,.92]} rotation={[-.18,0,0]}><cylinderGeometry args={[.6,.72,.16,32]}/><meshStandardMaterial color="#c89c4e" metalness={.82}/></mesh>
-    <mesh position={[.45,-1.91,.93]}><cylinderGeometry args={[.11,.11,.07,24]}/><meshStandardMaterial color="#e7d69b" metalness={.8}/></mesh>
-    {[-1.62,1.62].map((x)=><mesh key={x} position={[x,-.05,.6]}><boxGeometry args={[.09,4.04,.16]}/><meshStandardMaterial color="#8b5728" metalness={.64}/></mesh>)}
+    <BeveledBox position={[0,-1.03,.78]} args={[2.82,.22,.22,.09,4]} color="#d3aa5c" metalness={.72} roughness={.24}/>
+    <BeveledBox position={[0,-1.03,.91]} args={[2.42,.07,.05,.03,3]} color="#c89437" metalness={.12} roughness={.24}/>
+    {[-.58,0,.58].map((x,i)=><group key={x} position={[x,-1.39,.82]}>
+      <mesh rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.19,.19,.07,32]}/><meshStandardMaterial color="#b48c4d" metalness={.72} roughness={.25}/></mesh>
+      <mesh position={[0,0,.045]} rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.135,.135,.025,32]}/><meshStandardMaterial color={i===1?"#9b3025":"#ead9b0"} metalness={.28} roughness={.24}/></mesh>
+    </group>)}
+    <group position={[1.89,.42,.12]}>
+      <mesh position={[0,.21,0]} rotation={[0,0,-.2]}><cylinderGeometry args={[.07,.09,.7,20]}/><meshStandardMaterial color="#d5ad61" metalness={.78} roughness={.24}/></mesh>
+      <mesh position={[-.08,.59,0]}><sphereGeometry args={[.19,28,24]}/><meshStandardMaterial color="#efe1c0" metalness={.25} roughness={.2}/></mesh>
+      <mesh position={[0,-.15,0]}><cylinderGeometry args={[.22,.2,.15,28]}/><meshStandardMaterial color="#b5863d" metalness={.72} roughness={.25}/></mesh>
+    </group>
+    <BeveledBox position={[0,-1.72,.78]} args={[1.68,.38,.5,.12,5]} color="#322014" metalness={.34} roughness={.3}/>
+    <mesh position={[0,-1.85,.97]} rotation={[-.15,0,0]}><cylinderGeometry args={[.58,.7,.13,40]}/><meshStandardMaterial color="#c89c4e" metalness={.72} roughness={.26}/></mesh>
   </group>;
 }
 
 function Plinko({ index, progress }: { index: number; progress: { get: () => number } }) {
   const ball = useRef<THREE.Mesh>(null);
   useFrame(() => { if (!ball.current) return; const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .055) / .11, 0, 1); ball.current.position.set(Math.sin(local * 18) * .92, 3.35 - local * 4.3, .4); });
-  return <group position={[0, 0, -index * 10]}><CasinoTable/><mesh position={[0,1.5,0]}><boxGeometry args={[3.1,4.7,.18]}/><meshStandardMaterial color="#39291a" metalness={.54}/></mesh><mesh position={[0,1.5,.11]}><boxGeometry args={[2.8,4.4,.06]}/><meshStandardMaterial color="#173f2c"/></mesh>{Array.from({length:7},(_,row)=>Array.from({length:row+2},(_,col)=><mesh key={`${row}-${col}`} position={[(col-(row+1)/2)*.39,3.35-row*.57,.18]}><sphereGeometry args={[.075,12,12]}/><meshStandardMaterial color="#d1ad68" metalness={.85}/></mesh>))}<mesh ref={ball}><sphereGeometry args={[.18,24,24]}/><meshStandardMaterial color="#fff0bf" metalness={.72} emissive="#a57936" emissiveIntensity={.3}/></mesh></group>;
+  return <group position={[2.3,-.15,-index*10]}>
+    <mesh position={[0,-1.15,-.05]}><boxGeometry args={[.22,2.4,.34]}/><meshStandardMaterial color="#56351d" metalness={.36} roughness={.35}/></mesh>
+    <mesh position={[0,-1.15,-.05]}><boxGeometry args={[2.9,.22,.72]}/><meshStandardMaterial color="#b58b4d" metalness={.66} roughness={.29}/></mesh>
+    <BeveledBox position={[0,1.5,0]} args={[3.1,4.7,.22,.14,4]} color="#5a3920" metalness={.42} roughness={.3} castShadow/>
+    <BeveledBox position={[0,1.5,.14]} args={[2.82,4.42,.08,.1,4]} color="#16412d" roughness={.82}/>
+    {Array.from({length:8},(_,row)=>Array.from({length:row+2},(_,col)=><mesh key={`${row}-${col}`} position={[(col-(row+1)/2)*.39,3.35-row*.57,.22]}><sphereGeometry args={[.07,16,16]}/><meshStandardMaterial color="#d1ad68" metalness={.76} roughness={.25}/></mesh>))}
+    <BeveledBox position={[0,-.99,.24]} args={[2.88,.52,.22,.11,4]} color="#2b1d13" metalness={.38}/>
+    <mesh ref={ball}><sphereGeometry args={[.18,24,24]}/><meshStandardMaterial color="#fff0bf" metalness={.5} roughness={.16} emissive="#a57936" emissiveIntensity={.28}/></mesh>
+  </group>;
 }
 
 function Wheel({ index, progress }: { index: number; progress: { get: () => number } }) {
   const ref = useRef<THREE.Group>(null);
-  useFrame((_, delta) => { if (!ref.current) return; const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .055) / .11, 0, 1); ref.current.rotation.y = THREE.MathUtils.damp(ref.current.rotation.y, local * Math.PI * 5, 4, delta); });
-  return <group ref={ref} position={[0,0,-index*10]}><mesh><cylinderGeometry args={[2,2,.35,48]}/><meshStandardMaterial color="#b9904b" metalness={.85}/></mesh><mesh><cylinderGeometry args={[1.8,1.8,.38,12]}/><meshStandardMaterial color="#762f28" metalness={.25}/></mesh><mesh><cylinderGeometry args={[.42,.42,.42,32]}/><meshStandardMaterial color="#dfc17d" metalness={.8}/></mesh></group>;
+  useFrame(() => { if (!ref.current) return; const center = (index + 1) / 9; const phase = THREE.MathUtils.clamp((progress.get() - (center - .055)) / .11, 0, 1); ref.current.rotation.z = THREE.MathUtils.smoothstep(phase,0,1) * Math.PI * 8; });
+  const multipliers=["2×","3×","5×","2×","10×","3×","2×","5×","20×","2×","3×","50×"];
+  const labels=useMemo(()=>multipliers.map(wheelLabelTexture),[]);
+  const wedges=useMemo(()=>Array.from({length:12},(_,i)=>{const shape=new THREE.Shape();const a=i*Math.PI/6;const b=(i+1)*Math.PI/6;shape.moveTo(0,0);shape.lineTo(Math.cos(a)*1.45,Math.sin(a)*1.45);shape.absarc(0,0,1.45,a,b,false);shape.closePath();return new THREE.ShapeGeometry(shape,16);}),[]);
+  const colors=["#163c2c","#8e3025","#b08a4d","#1b211b","#74291f","#17432e","#b08a4d","#862f24","#162c22","#a78046","#6f281f","#15412f"];
+  return <group position={[2.35,0,-index*10]} scale={1.05}>
+    <mesh position={[0,-2.08,0]}><cylinderGeometry args={[.78,.92,.84,48]}/><meshStandardMaterial color="#382719" metalness={.47} roughness={.3}/></mesh>
+    <mesh position={[0,-1.64,0]}><cylinderGeometry args={[1.06,.98,.16,48]}/><meshStandardMaterial color="#c09b55" metalness={.72} roughness={.25}/></mesh>
+    <mesh position={[0,-.84,0]}><cylinderGeometry args={[.26,.34,1.52,32]}/><meshStandardMaterial color="#684321" metalness={.55} roughness={.29}/></mesh>
+    <group ref={ref}>
+      {wedges.map((geometry,i)=><mesh key={i} geometry={geometry} position={[0,0,.08]}><meshStandardMaterial color={colors[i]} roughness={.34} metalness={.22} side={THREE.DoubleSide}/></mesh>)}
+      {labels.map((texture,i)=>{const angle=(i+.5)*Math.PI/6;return <mesh key={i} position={[Math.cos(angle)*.94,Math.sin(angle)*.94,.13]} rotation={[0,0,angle+Math.PI/2]}><planeGeometry args={[.38,.2]}/><meshBasicMaterial map={texture} transparent toneMapped={false}/></mesh>;})}
+      <mesh><torusGeometry args={[1.48,.065,12,64]}/><meshStandardMaterial color="#dfbd72" metalness={.75} roughness={.23}/></mesh>
+      <mesh position={[0,0,.12]}><circleGeometry args={[.3,40]}/><meshStandardMaterial color="#d7b56b" metalness={.74} roughness={.25}/></mesh>
+      <mesh position={[0,0,.15]}><circleGeometry args={[.17,40]}/><meshStandardMaterial color="#292016" metalness={.62} roughness={.24}/></mesh>
+      {Array.from({length:24},(_,i)=><mesh key={`pin-${i}`} position={[Math.cos(i*Math.PI/12)*1.38,Math.sin(i*Math.PI/12)*1.38,.14]}><sphereGeometry args={[.032,12,12]}/><meshStandardMaterial color="#f7e2a7" metalness={.74} roughness={.24}/></mesh>)}
+    </group>
+    <mesh position={[0,1.62,.1]} rotation={[0,0,Math.PI]}><coneGeometry args={[.15,.34,3]}/><meshStandardMaterial color="#e2c47b" metalness={.75} roughness={.24}/></mesh>
+  </group>;
 }
 
 function CameraJourney({ target, smooth }: { target: { get: () => number }; smooth: { get: () => number; set: (value: number) => void } }) {
-  const curve = useMemo(() => new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 2.1, 14), new THREE.Vector3(0, 1.45, 4), new THREE.Vector3(-2.25, 1.5, -6), new THREE.Vector3(2.1, 1.45, -16), new THREE.Vector3(-2.1, 1.5, -26), new THREE.Vector3(2.2, 1.45, -36), new THREE.Vector3(-2.2, 1.5, -46), new THREE.Vector3(2.25, 1.45, -56), new THREE.Vector3(-1.8, 1.5, -66), new THREE.Vector3(0, 1.8, -78),
-  ]), []);
+  const { cameraPath, focusPath } = useMemo(() => ({
+    cameraPath: new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0,1.65,20),new THREE.Vector3(0,1.4,10),new THREE.Vector3(.22,1.4,0),new THREE.Vector3(-.2,1.4,-10),new THREE.Vector3(.22,1.4,-20),new THREE.Vector3(-.18,1.4,-30),new THREE.Vector3(.18,1.4,-40),new THREE.Vector3(-.18,1.4,-50),new THREE.Vector3(.12,1.4,-60),new THREE.Vector3(0,1.65,-82),
+    ]),
+    focusPath: new THREE.CatmullRomCurve3([
+      new THREE.Vector3(1.25,.22,10),new THREE.Vector3(1.25,.22,0),new THREE.Vector3(1.25,.22,-10),new THREE.Vector3(1.25,.22,-20),new THREE.Vector3(1.25,.22,-30),new THREE.Vector3(1.25,.22,-40),new THREE.Vector3(1.25,.22,-50),new THREE.Vector3(1.25,.22,-60),new THREE.Vector3(1.25,.22,-70),new THREE.Vector3(1.25,.22,-80),
+    ]),
+  }), []);
   const current = useRef(0);
   useFrame(({ camera }) => {
     current.current += (target.get() - current.current) * .08;
     const t = THREE.MathUtils.clamp(current.current, 0, 1); smooth.set(t);
-    camera.position.copy(curve.getPoint(t)); camera.lookAt(curve.getPoint(Math.min(.999, t + .022)));
+    camera.position.copy(cameraPath.getPoint(t)); camera.lookAt(focusPath.getPoint(t));
     const segment = t * 9; const nearest = Math.round(segment); const local = segment - nearest;
     const zoom = Math.max(0, 1 - Math.abs(local) * 5);
-    const perspective = camera as THREE.PerspectiveCamera; perspective.fov = 49 - zoom * 13; perspective.updateProjectionMatrix();
+    const perspective = camera as THREE.PerspectiveCamera; perspective.fov = 49 - zoom * 11; perspective.updateProjectionMatrix();
   });
   return null;
 }
 
+function ProductStage({ index }: { index: number }) {
+  return <group position={[2.3,-2.46,-index*10]}>
+    <mesh rotation={[-Math.PI/2,0,0]}><circleGeometry args={[3.3,96]}/><meshBasicMaterial color="#c7a15c" transparent opacity={.025} toneMapped={false}/></mesh>
+    <mesh rotation={[-Math.PI/2,0,0]}><torusGeometry args={[2.75,.012,6,96]}/><meshStandardMaterial color="#b89457" emissive="#7f5524" emissiveIntensity={.16} metalness={.48} roughness={.34}/></mesh>
+    <pointLight position={[0,4.5,0]} intensity={27} distance={13} decay={2} color="#f1d4a0"/>
+    <pointLight position={[-2.4,2.8,-1.8]} intensity={12} distance={9} decay={2} color="#9e733c"/>
+  </group>;
+}
+
 function World({ progress, target }: { progress: { get: () => number; set: (value: number) => void }; target: { get: () => number } }) {
   return <>
-    <color attach="background" args={["#100c08"]}/><fog attach="fog" args={["#100c08",18,52]}/>
-    <ambientLight intensity={1.35}/><directionalLight position={[-4,9,8]} intensity={3.7} color="#ffe5b7" castShadow/><pointLight position={[0,4,-8]} intensity={85} distance={20} color="#dfa74e"/><pointLight position={[0,4,-34]} intensity={80} distance={21} color="#e3ac54"/><pointLight position={[0,4,-58]} intensity={75} distance={20} color="#d5a24e"/>
-    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-2.5,-33]}><planeGeometry args={[13,100]}/><meshStandardMaterial color="#193a29" roughness={.86}/></mesh>
-    <mesh position={[0,6.4,-33]}><boxGeometry args={[13,.45,100]}/><meshStandardMaterial color="#1a130d" metalness={.32} roughness={.55}/></mesh>
-    {[-6.35,6.35].map((x)=><mesh key={x} position={[x,2,-33]}><boxGeometry args={[.35,9,100]}/><meshStandardMaterial color="#342317" metalness={.28} roughness={.58}/></mesh>)}
-    {Array.from({length:10},(_,i)=><group key={i} position={[0,0,3-i*9]}>
-      {[-5.75,5.75].map((x)=><group key={x} position={[x,0,0]}><mesh position={[0,2.1,0]}><cylinderGeometry args={[.27,.36,8.6,20]}/><meshStandardMaterial color="#70471f" metalness={.68} roughness={.3}/></mesh><mesh position={[0,4.25,0]}><cylinderGeometry args={[.42,.38,.2,24]}/><meshStandardMaterial color="#d5a85e" metalness={.85}/></mesh><pointLight position={[x<0?.5:-.5,3.4,.25]} intensity={17} distance={7} color="#ffc86a"/></group>)}
-      <mesh position={[0,5.65,0]}><cylinderGeometry args={[.055,.055,1.3,12]}/><meshStandardMaterial color="#bd9853" metalness={.85}/></mesh>
-      <mesh position={[0,4.85,0]} rotation={[-Math.PI/2,0,0]}><torusGeometry args={[.68,.075,10,40]}/><meshStandardMaterial color="#c5a15d" metalness={.8}/></mesh>
-      <pointLight position={[0,4.75,0]} intensity={26} distance={9} color="#ffd47d"/>
-    </group>)}
-    <ScrollCards progress={progress} index={0}/><RouletteTable index={1}/><Slots index={2} progress={progress}/><Dice index={3} progress={progress}/><Plinko index={4} progress={progress}/><ScrollCards index={5} progress={progress} baccarat/><ScrollCards index={6} progress={progress}/><Wheel index={7} progress={progress}/>
+    <color attach="background" args={["#090b09"]}/><fog attach="fog" args={["#090b09",32,105]}/>
+    <ambientLight intensity={.42}/><hemisphereLight args={["#f0d7ae","#151914",.7]}/><directionalLight position={[-3,7,8]} intensity={2.5} color="#ffe8c7"/>
+    <mesh rotation={[-Math.PI/2,0,0]} position={[0,-2.5,-34]}><planeGeometry args={[30,118]}/><meshStandardMaterial color="#0c100d" roughness={.88}/></mesh>
+    {Array.from({length:8},(_,i)=><ProductStage key={i} index={i}/>)}
+    <ScrollCards progress={progress} index={0}/><RouletteTable index={1} progress={progress}/><Slots index={2} progress={progress}/><Dice index={3} progress={progress}/><Plinko index={4} progress={progress}/><ScrollCards index={5} progress={progress} baccarat/><ScrollCards index={6} progress={progress}/><Wheel index={7} progress={progress}/>
     <CameraJourney target={target} smooth={progress}/>
   </>;
 }
 
 function Caption({ game, index, progress }: { game: GameMeta; index: number; progress: ReturnType<typeof useScroll>["scrollYProgress"] }) {
   const center = (index + 1) / 9; const fade = useTransform(progress, [Math.max(0,center-.055), center-.025, center+.025, Math.min(1,center+.055)], [0,1,1,0]);
-  return <motion.div className={`journey-caption ${index%2?"right":""}`} style={{ opacity: fade }}><span>{String(index+1).padStart(2,"0")} · NOCTURNE CLUB</span><h2>{game.name}</h2><p>{game.description}</p><Link to={game.route}>Diesen Tisch betreten <ArrowRight size={16}/></Link></motion.div>;
+  return <motion.div className="journey-caption" style={{ opacity: fade }}><span>{String(index+1).padStart(2,"0")} · SPIELWELT</span><h2>{game.name}</h2><p>{game.description}</p><Link to={game.route}>Spiel entdecken <ArrowRight size={16}/></Link></motion.div>;
 }
 
 export function LobbyJourney({ games }: { games: GameMeta[] }) {
@@ -188,7 +291,7 @@ export function LobbyJourney({ games }: { games: GameMeta[] }) {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const smoothProgress = useMotionValue(0);
   return <section className="journey-shell" ref={ref} aria-label="Scroll-Reise durch die Spielwelten">
-    <div className="journey-stage"><Canvas camera={{position:[0,2.1,14],fov:49}} dpr={[1,1.5]} gl={{antialias:true,alpha:false,powerPreference:"high-performance"}}><World progress={smoothProgress} target={scrollYProgress}/></Canvas><div className="journey-vignette"/>
+    <div className="journey-stage"><Canvas camera={{position:[0,1.65,20],fov:49}} dpr={[1,1.5]} gl={{antialias:true,alpha:false,powerPreference:"high-performance"}}><World progress={smoothProgress} target={scrollYProgress}/></Canvas><div className="journey-vignette"/>
       <div className="journey-captions">{games.map((game,index)=><Caption key={game.id} game={game} index={index} progress={smoothProgress}/>)}</div>
       <div className="journey-progress" aria-hidden="true"><motion.i style={{scaleX:smoothProgress,transformOrigin:"left"}}/></div>
     </div>
