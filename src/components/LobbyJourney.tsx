@@ -27,6 +27,31 @@ function Card({ rank, suit, position, rotation = [0, 0, 0] as [number, number, n
   </mesh>;
 }
 
+function reelTexture(seed: number) {
+  const canvas = document.createElement("canvas"); canvas.width = 256; canvas.height = 768;
+  const ctx = canvas.getContext("2d")!;
+  const symbols = [["7", "★", "BELL"], ["CHERRY", "7", "DIAMOND"], ["BAR", "BELL", "7"]][seed]!;
+  ctx.fillStyle = "#f0e5c8"; ctx.fillRect(0, 0, 256, 768);
+  for (let row = 0; row < 3; row += 1) {
+    const top = row * 256; ctx.fillStyle = row === 1 ? "#fff8e8" : "#e5d7b9"; ctx.fillRect(6, top + 6, 244, 244);
+    ctx.strokeStyle = "#b08a49"; ctx.lineWidth = 5; ctx.strokeRect(8, top + 8, 240, 240);
+    const label = symbols[row]!; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = label === "7" ? "#a33128" : "#253a2b";
+    ctx.font = label.length > 3 ? "bold 34px Georgia" : "bold 142px Georgia";
+    ctx.fillText(label, 128, top + 128);
+  }
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapT = THREE.RepeatWrapping; texture.needsUpdate = true; return texture;
+}
+
+function marqueeTexture() {
+  const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 192;
+  const ctx = canvas.getContext("2d")!; ctx.fillStyle = "#1b120b"; ctx.fillRect(0,0,512,192);
+  ctx.strokeStyle = "#d7b565"; ctx.lineWidth = 8; ctx.strokeRect(8,8,496,176);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "#f1d28b"; ctx.font = "italic 68px Georgia"; ctx.fillText("NOCTURNE",256,83);
+  ctx.fillStyle = "#c69a4f"; ctx.font = "bold 24px Georgia"; ctx.fillText("LUXURY SLOT CLUB",256,147);
+  const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; return texture;
+}
+
 function CasinoTable({ position = [0,0,0] as [number,number,number], roulette = false }: { position?: [number,number,number]; roulette?: boolean }) {
   return <group position={position}>
     <mesh position={[0,-.08,0]} scale={[1.8,1,.96]} castShadow><cylinderGeometry args={[1,.92,.22,64]}/><meshStandardMaterial color="#153f2c" roughness={.8}/></mesh>
@@ -70,8 +95,41 @@ function Dice({ index, progress }: { index: number; progress: { get: () => numbe
 
 function Slots({ index, progress }: { index: number; progress: { get: () => number } }) {
   const reels = useRef<THREE.Group>(null);
-  useFrame((_, delta) => { if (!reels.current) return; const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .06) / .12, 0, 1); reels.current.children.forEach((reel, i) => { const spin = Math.max(0, 1 - Math.abs(local - (.3 + i * .16)) * 4); reel.rotation.x = THREE.MathUtils.damp(reel.rotation.x, spin * Math.PI * 8, 5, delta); }); });
-  return <group position={[0, .1, -index * 10]} rotation={[0,-.16,0]}><mesh castShadow><boxGeometry args={[3.8, 3.8, .8]}/><meshStandardMaterial color="#54351e" metalness={.72} roughness={.25}/></mesh><mesh position={[0, -.1, .43]}><boxGeometry args={[3.22, 2.5, .12]}/><meshStandardMaterial color="#10150f"/></mesh><mesh position={[0,1.35,.44]}><boxGeometry args={[2.8,.42,.08]}/><meshStandardMaterial color="#c59b53" emissive="#7b4d1e" emissiveIntensity={.24}/></mesh><group ref={reels} position={[0,-.1,.55]}>{[-1.03,0,1.03].map((x,i)=><group key={i} position={[x,0,0]}><mesh><cylinderGeometry args={[.42,.42,.14,48]}/><meshStandardMaterial color="#dfc17d" metalness={.64}/></mesh><mesh position={[0,0,.09]}><planeGeometry args={[.7,.7]}/><meshBasicMaterial color={i===1?"#bd8c3e":"#e4d3a7"}/></mesh></group>)}</group></group>;
+  const textures = useMemo(() => [0,1,2].map(reelTexture), []);
+  const marquee = useMemo(marqueeTexture, []);
+  useFrame((_, delta) => {
+    const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .06) / .12, 0, 1);
+    if (reels.current) reels.current.children.forEach((reel, i) => { const spin = Math.max(0, 1 - Math.abs(local - (.32 + i * .13)) * 4); const barrel = reel.children[0]; if (barrel) barrel.rotation.x = THREE.MathUtils.damp(barrel.rotation.x, spin * Math.PI * 7, 5, delta); textures[i]!.offset.y = (spin * local * (i + 2)) % 1; });
+  });
+  return <group position={[0, .05, -index * 10]} rotation={[0,-.12,0]}>
+    {/* Carved cabinet shell and stepped base */}
+    <mesh position={[0,0,0]} castShadow><boxGeometry args={[3.35,4.7,1.15]}/><meshStandardMaterial color="#4b2412" metalness={.2} roughness={.3}/></mesh>
+    <mesh position={[0,-2.13,.1]} castShadow><boxGeometry args={[3.75,.45,1.42]}/><meshStandardMaterial color="#7b4c22" metalness={.58} roughness={.27}/></mesh>
+    <mesh position={[0,-2.4,.08]}><boxGeometry args={[3.25,.18,1.22]}/><meshStandardMaterial color="#bd9854" metalness={.82} roughness={.23}/></mesh>
+    {/* Bright marquee and trim make the silhouette read as a casino slot cabinet */}
+    <mesh position={[0,1.77,.61]}><boxGeometry args={[2.92,.78,.12]}/><meshStandardMaterial color="#1b120b" metalness={.35}/></mesh>
+    <mesh position={[0,1.77,.685]}><planeGeometry args={[2.72,.62]}/><meshBasicMaterial map={marquee} toneMapped={false}/></mesh>
+    {[-1.48,1.48].map((x)=><mesh key={x} position={[x,0,.61]}><boxGeometry args={[.13,3.65,.14]}/><meshStandardMaterial color="#d2a853" metalness={.88} roughness={.2}/></mesh>)}
+    <mesh position={[0,2.25,.55]}><boxGeometry args={[2.15,.2,.32]}/><meshStandardMaterial color="#c39b52" metalness={.86}/></mesh>
+    {/* Recessed reel window, brass bezels, glass and three readable symbol reels */}
+    <mesh position={[0,.02,.61]}><boxGeometry args={[2.86,2.13,.16]}/><meshStandardMaterial color="#c09b57" metalness={.82} roughness={.24}/></mesh>
+    <mesh position={[0,.02,.715]}><boxGeometry args={[2.65,1.92,.1]}/><meshStandardMaterial color="#17140f" metalness={.1} roughness={.4}/></mesh>
+    <group ref={reels} position={[0,.02,.79]}>
+      {[-.84,0,.84].map((x,i)=><group key={i} position={[x,0,0]}>
+        <mesh rotation={[0,0,Math.PI/2]}><cylinderGeometry args={[.55,.55,.68,40,1,true]}/><meshStandardMaterial color="#c8a45f" metalness={.78} roughness={.25}/></mesh>
+        <mesh position={[0,0,.12]}><planeGeometry args={[.77,1.72]}/><meshBasicMaterial map={textures[i]} toneMapped={false}/></mesh>
+        <mesh position={[0,0,.2]}><planeGeometry args={[.79,1.78]}/><meshPhysicalMaterial color="#fff3d5" transparent opacity={.1} roughness={.08} metalness={.12}/></mesh>
+      </group>)}
+    </group>
+    <mesh position={[0,-1.13,.65]}><boxGeometry args={[2.8,.24,.15]}/><meshStandardMaterial color="#d3aa5c" metalness={.86}/></mesh>
+    <mesh position={[0,-1.13,.76]}><boxGeometry args={[2.36,.08,.04]}/><meshStandardMaterial color="#fff1bf" emissive="#c89437" emissiveIntensity={1.1}/></mesh>
+    {/* Right-hand lever, cast handle, coin slot and payout cup */}
+    <group position={[1.83,.48,.02]}><mesh position={[0,.28,0]} rotation={[0,0,-.22]}><cylinderGeometry args={[.075,.085,.85,16]}/><meshStandardMaterial color="#d5ad61" metalness={.91}/></mesh><mesh position={[-.1,.72,0]}><sphereGeometry args={[.22,24,24]}/><meshStandardMaterial color="#efe1c0" metalness={.25} roughness={.2}/></mesh><mesh position={[0,-.18,0]}><cylinderGeometry args={[.22,.2,.14,24]}/><meshStandardMaterial color="#b5863d" metalness={.88}/></mesh></group>
+    <mesh position={[0,-1.58,.72]}><boxGeometry args={[1.58,.38,.44]}/><meshStandardMaterial color="#322014" metalness={.34} roughness={.3}/></mesh>
+    <mesh position={[0,-1.73,.92]} rotation={[-.18,0,0]}><cylinderGeometry args={[.6,.72,.16,32]}/><meshStandardMaterial color="#c89c4e" metalness={.82}/></mesh>
+    <mesh position={[.45,-1.91,.93]}><cylinderGeometry args={[.11,.11,.07,24]}/><meshStandardMaterial color="#e7d69b" metalness={.8}/></mesh>
+    {[-1.62,1.62].map((x)=><mesh key={x} position={[x,-.05,.6]}><boxGeometry args={[.09,4.04,.16]}/><meshStandardMaterial color="#8b5728" metalness={.64}/></mesh>)}
+  </group>;
 }
 
 function Plinko({ index, progress }: { index: number; progress: { get: () => number } }) {
