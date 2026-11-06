@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Volume2, VolumeX } from "lucide-react";
+import { ChevronDown, Menu, X, Volume2, VolumeX } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTokens } from "../context/TokenContext";
 import { formatTokens } from "../lib/format";
@@ -9,6 +9,10 @@ export function Header() {
   const { pathname } = useLocation();
   const [soundOn, setSoundOn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [gamesOpen, setGamesOpen] = useState(false);
+  const gameLinks = [
+    ["Blackjack", "/blackjack"], ["Roulette", "/roulette"], ["Slots", "/slots"], ["Dice", "/dice"], ["Hi-Lo", "/hilo"], ["Plinko", "/plinko"], ["Baccarat", "/baccarat"], ["Lucky Wheel", "/wheel"], ["Mines", "/mines"], ["Crash", "/crash"], ["Limbo", "/limbo"], ["Keno", "/keno"], ["Video Poker", "/video-poker"], ["Dragon Tiger", "/dragon-tiger"], ["Coin Flip", "/coinflip"],
+  ];
   const inLobby = pathname === "/";
   useEffect(() => setMenuOpen(false), [pathname]);
 
@@ -33,6 +37,10 @@ export function Header() {
           {soundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
         </button>
         {!inLobby && <Link className="lobby-link" to="/">Zur Lobby</Link>}
+        <div className="games-dropdown">
+          <button className="games-dropdown-trigger" type="button" aria-expanded={gamesOpen} aria-controls="games-menu" onClick={() => setGamesOpen((open) => !open)}>Spiele <ChevronDown size={14}/></button>
+          {gamesOpen && <nav className="games-dropdown-menu" id="games-menu" aria-label="Alle Spiele">{gameLinks.map(([name, route]) => <Link key={route} to={route} onClick={() => setGamesOpen(false)}>{name}</Link>)}</nav>}
+        </div>
         <button
           className="icon-button menu-toggle"
           type="button"
@@ -45,21 +53,7 @@ export function Header() {
       </div>
       {menuOpen && (
         <nav className="mobile-menu" aria-label="Spielnavigation">
-          <Link to="/roulette" onClick={() => setMenuOpen(false)}>Roulette</Link>
-          <Link to="/blackjack" onClick={() => setMenuOpen(false)}>Blackjack</Link>
-          <Link to="/slots" onClick={() => setMenuOpen(false)}>Slots</Link>
-          <Link to="/dice" onClick={() => setMenuOpen(false)}>Dice</Link>
-          <Link to="/hilo" onClick={() => setMenuOpen(false)}>Hi-Lo</Link>
-          <Link to="/plinko" onClick={() => setMenuOpen(false)}>Plinko</Link>
-          <Link to="/baccarat" onClick={() => setMenuOpen(false)}>Baccarat</Link>
-          <Link to="/wheel" onClick={() => setMenuOpen(false)}>Lucky Wheel</Link>
-          <Link to="/mines" onClick={() => setMenuOpen(false)}>Mines</Link>
-          <Link to="/crash" onClick={() => setMenuOpen(false)}>Crash</Link>
-          <Link to="/limbo" onClick={() => setMenuOpen(false)}>Limbo</Link>
-          <Link to="/keno" onClick={() => setMenuOpen(false)}>Keno</Link>
-          <Link to="/video-poker" onClick={() => setMenuOpen(false)}>Video Poker</Link>
-          <Link to="/dragon-tiger" onClick={() => setMenuOpen(false)}>Dragon Tiger</Link>
-          <Link to="/coinflip" onClick={() => setMenuOpen(false)}>Coin Flip</Link>
+          {gameLinks.map(([name, route]) => <Link key={route} to={route} onClick={() => setMenuOpen(false)}>{name}</Link>)}
         </nav>
       )}
     </header>
