@@ -272,7 +272,7 @@ function ProductStage({ index }: { index: number }) {
 
 function World({ progress, target }: { progress: { get: () => number; set: (value: number) => void }; target: { get: () => number } }) {
   return <>
-    <color attach="background" args={["#090b09"]}/><fog attach="fog" args={["#090b09",32,105]}/>
+    <color attach="background" args={["#090b09"]}/><fog attach="fog" args={["#090b09",9,19]}/>
     <ambientLight intensity={.42}/><hemisphereLight args={["#f0d7ae","#151914",.7]}/><directionalLight position={[-3,7,8]} intensity={2.5} color="#ffe8c7"/>
     <mesh rotation={[-Math.PI/2,0,0]} position={[0,-2.5,-34]}><planeGeometry args={[30,118]}/><meshStandardMaterial color="#0c100d" roughness={.88}/></mesh>
     {Array.from({length:8},(_,i)=><ProductStage key={i} index={i}/>)}
@@ -282,8 +282,8 @@ function World({ progress, target }: { progress: { get: () => number; set: (valu
 }
 
 function Caption({ game, index, progress }: { game: GameMeta; index: number; progress: ReturnType<typeof useScroll>["scrollYProgress"] }) {
-  const center = (index + 1) / 9; const fade = useTransform(progress, [Math.max(0,center-.055), center-.025, center+.025, Math.min(1,center+.055)], [0,1,1,0]);
-  return <motion.div className="journey-caption" style={{ opacity: fade }}><span>{String(index+1).padStart(2,"0")} · SPIELWELT</span><h2>{game.name}</h2><p>{game.description}</p><Link to={game.route}>Spiel entdecken <ArrowRight size={16}/></Link></motion.div>;
+  const center = (index + 1) / 9; const start=Math.max(0,center-.055);const end=Math.min(1,center+.055);const fade = useTransform(progress, [start, center-.025, center+.025, end], [0,1,1,0]);const visibility=useTransform(progress,[start,Math.min(end,start+.002),Math.max(start,end-.002),end],["hidden","visible","visible","hidden"]);
+  return <motion.div className="journey-caption" style={{ opacity: fade, visibility }}><span>{String(index+1).padStart(2,"0")} · SPIELWELT</span><h2>{game.name}</h2><p>{game.description}</p><Link to={game.route}>Spiel entdecken <ArrowRight size={16}/></Link></motion.div>;
 }
 
 export function LobbyJourney({ games }: { games: GameMeta[] }) {

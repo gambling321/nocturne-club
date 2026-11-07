@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import { BetControls } from "../components/BetControls";
 import { GameLayout } from "../components/GameLayout";
 import { ResultBanner, type ResultKind } from "../components/ResultBanner";
@@ -172,7 +173,7 @@ export function Roulette() {
           >
             {rouletteOrder.map((number, index) => {
               const angle = index * rouletteStep;
-              return <span key={number} className={`roulette-pocket ${number === 0 ? "green" : RED_NUMBERS.has(number) ? "red" : "black"}`} style={{ transform: `translate(-50%, -50%) rotate(${angle}deg) translateY(-138px) rotate(${-angle}deg)` }}>{number}</span>;
+              return <span key={number} className={`roulette-pocket ${number === 0 ? "green" : RED_NUMBERS.has(number) ? "red" : "black"}`} style={{ "--pocket-angle": `${angle}deg`, "--counter-angle": `${-angle}deg` } as CSSProperties}>{number}</span>;
             })}
             <div className="roulette-wheel-inner">
               <span>{winningNumber ?? "✦"}</span>

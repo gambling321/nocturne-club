@@ -38,6 +38,7 @@ export function Slots() {
     SLOT_SYMBOLS[2],
   ]);
   const [isSpinning, setIsSpinning] = useState(false);
+  const [stoppedReels, setStoppedReels] = useState<number[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [message, setMessage] = useState("Drei Walzen, eine Gewinnlinie.");
   const [resultKind, setResultKind] = useState<ResultKind>("neutral");
@@ -63,21 +64,19 @@ export function Slots() {
     }
 
     setIsSpinning(true);
+    setStoppedReels([]);
     setResultKind("neutral");
     setMessage("Die Walzen drehen sich …");
-    for (let tick = 0; tick < 18; tick += 1) {
-      setReels([securePick(SLOT_SYMBOLS), securePick(SLOT_SYMBOLS), securePick(SLOT_SYMBOLS)]);
-      await sleep(75);
-    }
-
     const finalReels: SlotSymbol[] = [
       securePick(SLOT_SYMBOLS),
       securePick(SLOT_SYMBOLS),
       securePick(SLOT_SYMBOLS),
     ];
+    await sleep(1200);
+    setReels(finalReels);
     for (let reel = 0; reel < finalReels.length; reel += 1) {
-      setReels((current) => current.map((symbol, index) => (index <= reel ? finalReels[index]! : symbol)));
-      await sleep(520);
+      await sleep(650);
+      setStoppedReels((current) => [...current, reel]);
     }
 
     const outcome = resultFor(finalReels);
@@ -119,9 +118,8 @@ export function Slots() {
           <div className="slot-machine-top"><span>NOCTURNE</span><strong>REELS</strong></div>
           <div className="slot-reels" aria-live="polite">
             {reels.map((symbol, index) => (
-              <div className="slot-reel" key={`${symbol.id}-${index}`}>
-                <span aria-hidden="true">{symbol.glyph}</span>
-                <small>{symbol.name}</small>
+              <div className={`slot-reel ${isSpinning && !stoppedReels.includes(index) ? "rolling" : ""}`} key={`${symbol.id}-${index}`}>
+                {isSpinning && !stoppedReels.includes(index) ? <div className="slot-reel-strip">{Array.from({ length: 15 }, (_, stripIndex) => { const item=SLOT_SYMBOLS[(stripIndex+index)%SLOT_SYMBOLS.length]!; return <span key={stripIndex} aria-hidden="true">{item.glyph}<small>{item.name}</small></span>; })}</div> : <><span aria-hidden="true">{symbol.glyph}</span><small>{symbol.name}</small></>}
               </div>
             ))}
           </div>

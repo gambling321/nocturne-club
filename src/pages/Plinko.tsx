@@ -10,17 +10,17 @@ import { secureInt } from "../lib/random";
 import type { HistoryItem } from "../types";
 
 const PLINKO_TABLES = {
-  niedrig: [0.3, 0.5, 0.75, 0.9, 1.1, 1.35, 1.5, 1.35, 1.1, 0.9, 0.75, 0.5, 0.3],
-  mittel: [0.1, 0.2, 0.45, 0.8, 1.15, 1.7, 3.2, 1.7, 1.15, 0.8, 0.45, 0.2, 0.1],
-  hoch: [0, 0.1, 0.25, 0.5, 0.9, 1.9, 5, 1.9, 0.9, 0.5, 0.25, 0.1, 0],
+  niedrig: [1.5, 1.2, 1.1, 1, 0.9, 0.8, 0.65, 0.8, 0.9, 1, 1.1, 1.2, 1.5],
+  mittel: [4, 2.5, 1.8, 1.4, 1, 0.6, 0.25, 0.6, 1, 1.4, 1.8, 2.5, 4],
+  hoch: [1000, 26, 9, 4, 2, 0.5, 0.1, 0.5, 2, 4, 9, 26, 1000],
 } as const;
 
 type Risk = keyof typeof PLINKO_TABLES;
 
 const RISK_COPY: Record<Risk, { label: string; description: string }> = {
-  niedrig: { label: "Niedrig", description: "Ausgeglichenere Felder, kleinerer Hauptgewinn." },
-  mittel: { label: "Mittel", description: "Der klassische Mix aus kleinen und großen Multiplikatoren." },
-  hoch: { label: "Hoch", description: "Große Ausschläge und ein seltener Spitzenwert." },
+  niedrig: { label: "Niedrig", description: "Kleinere Ausschläge; die äußeren Felder zahlen etwas höher." },
+  mittel: { label: "Mittel", description: "In der Mitte kleine Werte, außen deutlich höhere Multiplikatoren." },
+  hoch: { label: "Hoch", description: "Sehr hohe Außenfelder und kleine Werte nahe der Mitte." },
 };
 
 function prefersReducedMotion(): boolean {
@@ -60,13 +60,9 @@ export function Plinko() {
       return;
     }
 
-    const index = secureInt(0, multipliers.length - 1);
+    const directions = Array.from({ length: multipliers.length - 1 }, () => secureInt(0, 1) === 1);
+    const index = directions.filter(Boolean).length;
     const multiplier = multipliers[index]!;
-    const directions = Array.from({ length: multipliers.length - 1 }, (_, step) => step < index);
-    for (let step = directions.length - 1; step > 0; step -= 1) {
-      const swap = secureInt(0, step);
-      [directions[step], directions[swap]] = [directions[swap]!, directions[step]!];
-    }
     let rights = 0;
     setBallPath(["50%", ...directions.map((right, step) => {
       if (right) rights += 1;
@@ -135,7 +131,7 @@ export function Plinko() {
           <div className="plinko-pegs" aria-hidden="true">
             {Array.from({ length: 12 }, (_, row) => (
               <div className="plinko-peg-row" key={row}>
-                {Array.from({ length: row + 1 }, (_, column) => <i className="plinko-peg" key={column} />)}
+                {Array.from({ length: row + 3 }, (_, column) => <i className="plinko-peg" key={column} />)}
               </div>
             ))}
           </div>
