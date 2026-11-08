@@ -69,9 +69,9 @@ function rouletteLayoutTexture() {
 
 function slotSymbolTexture(label: string, accent: string) {
   const canvas=document.createElement("canvas");canvas.width=256;canvas.height=256;const ctx=canvas.getContext("2d")!;
-  const gradient=ctx.createLinearGradient(0,0,256,256);gradient.addColorStop(0,"#f8f0dd");gradient.addColorStop(1,"#cdbd9d");ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
-  ctx.strokeStyle="#b18c4d";ctx.lineWidth=7;ctx.strokeRect(9,9,238,238);ctx.strokeStyle="#ffffff88";ctx.lineWidth=2;ctx.strokeRect(19,19,218,218);
-  ctx.fillStyle=accent;ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=label.length>3?"bold 36px Georgia":"bold 112px Georgia";ctx.shadowColor="#6a4526aa";ctx.shadowBlur=5;ctx.fillText(label,128,128);
+  const gradient=ctx.createLinearGradient(0,0,0,256);gradient.addColorStop(0,"#f4e8ca");gradient.addColorStop(.5,"#e2d2af");gradient.addColorStop(1,"#c9b58c");ctx.fillStyle=gradient;ctx.fillRect(0,0,256,256);
+  const glow=ctx.createRadialGradient(128,120,4,128,128,112);glow.addColorStop(0,"#ffffff55");glow.addColorStop(1,"#ffffff00");ctx.fillStyle=glow;ctx.fillRect(0,0,256,256);
+  ctx.fillStyle=accent;ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=label.length>3?"bold 31px Georgia":"bold 104px Georgia";ctx.shadowColor="#6a452644";ctx.shadowBlur=4;ctx.fillText(label,128,128);
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;return texture;
 }
 
@@ -138,13 +138,22 @@ function ScrollCards({ progress, index, baccarat = false }: { progress: { get: (
   </group>;
 }
 
+function DicePips({ position, rotation, pips }: { position: [number,number,number]; rotation: [number,number,number]; pips: [number,number][] }) {
+  return <group position={position} rotation={rotation}>{pips.map(([x,y],index)=><mesh key={index} position={[x,y,.012]}><sphereGeometry args={[.085,16,12]}/><meshStandardMaterial color="#352a20" roughness={.34}/></mesh>)}</group>;
+}
+
 function Dice({ index, progress }: { index: number; progress: { get: () => number } }) {
   const ref = useRef<THREE.Group>(null);
   useFrame((_, delta) => { if (!ref.current) return; const p = progress.get(); const center = (index + 1) / 9; const local = THREE.MathUtils.clamp((p - center + .055) / .11, 0, 1); ref.current.rotation.x = THREE.MathUtils.damp(ref.current.rotation.x, local * Math.PI * 2.5, 6, delta); ref.current.rotation.y = THREE.MathUtils.damp(ref.current.rotation.y, local * Math.PI * 3, 6, delta); ref.current.position.y = -.35 + Math.sin(local * Math.PI) * 1.15; });
   return <group position={[2.3,0,-index*10]}>
     <mesh position={[0,-1.72,0]}><cylinderGeometry args={[.72,.9,1.56,48]}/><meshStandardMaterial color="#30231a" metalness={.46} roughness={.3}/></mesh>
     <mesh position={[0,-.9,0]}><cylinderGeometry args={[1.05,.96,.16,48]}/><meshStandardMaterial color="#ba9655" metalness={.72} roughness={.25}/></mesh>
-    <mesh ref={ref} position={[0,-.35,0]} castShadow><boxGeometry args={[1.35,1.35,1.35]}/><meshStandardMaterial color="#eee4cc" roughness={.24}/></mesh>
+    <group ref={ref} position={[0,-.35,0]}>
+      <mesh castShadow><boxGeometry args={[1.35,1.35,1.35]}/><meshStandardMaterial color="#eee4cc" roughness={.24}/></mesh>
+      <DicePips position={[0,0,.68]} rotation={[0,0,0]} pips={[[0,0]]}/><DicePips position={[0,0,-.68]} rotation={[0,Math.PI,0]} pips={[[-.32,.32],[.32,-.32]]}/>
+      <DicePips position={[.68,0,0]} rotation={[0,Math.PI/2,0]} pips={[[-.32,.32],[0,0],[.32,-.32]]}/><DicePips position={[-.68,0,0]} rotation={[0,-Math.PI/2,0]} pips={[[-.32,.32],[-.32,-.32],[.32,.32],[.32,-.32]]}/>
+      <DicePips position={[0,.68,0]} rotation={[-Math.PI/2,0,0]} pips={[[-.32,.32],[.32,.32],[0,0],[-.32,-.32],[.32,-.32]]}/><DicePips position={[0,-.68,0]} rotation={[Math.PI/2,0,0]} pips={[[-.32,.32],[-.32,0],[-.32,-.32],[.32,.32],[.32,0],[.32,-.32]]}/>
+    </group>
   </group>;
 }
 

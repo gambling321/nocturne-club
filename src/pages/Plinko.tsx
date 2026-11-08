@@ -16,6 +16,7 @@ const PLINKO_TABLES = {
 } as const;
 
 type Risk = keyof typeof PLINKO_TABLES;
+type DropBall = { id: number; path: string[]; index: number };
 
 const RISK_COPY: Record<Risk, { label: string; description: string }> = {
   niedrig: { label: "Niedrig", description: "Kleinere Ausschläge; die äußeren Felder zahlen etwas höher." },
@@ -31,16 +32,16 @@ export function Plinko() {
   const { balance, placeBet, credit } = useTokens();
   const [bet, setBet] = useState(10);
   const [risk, setRisk] = useState<Risk>("mittel");
-  const [isDropping, setIsDropping] = useState(false);
+  const [activeBalls, setActiveBalls] = useState<DropBall[]>([]);
   const [landingIndex, setLandingIndex] = useState<number | null>(null);
-  const [dropId, setDropId] = useState(0);
-  const [ballPath, setBallPath] = useState<string[]>(["50%"]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [feedback, setFeedback] = useState<{ kind: ResultKind; message: string }>({
     kind: "neutral",
     message: "Wähle Risiko und Einsatz, dann lasse den Ball fallen.",
   });
   const historyId = useRef(0);
+  const ballId = useRef(0);
+  const isDropping = activeBalls.length > 0;
 
   const multipliers = PLINKO_TABLES[risk];
 
@@ -54,7 +55,6 @@ export function Plinko() {
   };
 
   const drop = async () => {
-    if (isDropping) return;
     if (bet > balance || !placeBet(bet)) {
       setFeedback({ kind: "loss", message: "Für diesen Einsatz sind nicht genug Tokens verfügbar." });
       return;
@@ -64,15 +64,15 @@ export function Plinko() {
     const index = directions.filter(Boolean).length;
     const multiplier = multipliers[index]!;
     let rights = 0;
-    setBallPath(["50%", ...directions.map((right, step) => {
+    const path = ["50%", ...directions.map((right, step) => {
       if (right) rights += 1;
       return `${50 + ((rights * 2 - (step + 1)) / (multipliers.length - 1)) * 46}%`;
-    })]);
+    })];
+    const id = ++ballId.current;
+    setActiveBalls((balls) => [...balls, { id, path, index }]);
     setLandingIndex(index);
-    setDropId((value) => value + 1);
-    setIsDropping(true);
-    setFeedback({ kind: "neutral", message: "Der Ball findet seinen Weg durch das Pegboard …" });
-    await sleep(prefersReducedMotion() ? 100 : 1250);
+    setFeedback({ kind: "neutral", message: activeBalls.length ? "Mehrere Kugeln fallen gleichzeitig …" : "Die Kugel findet ihren Weg durch das Pegboard …" });
+    await sleep(prefersReducedMotion() ? 100 : 2200);
 
     const payout = payoutFor(bet, multiplier);
     if (payout > 0) credit(payout);
@@ -90,7 +90,7 @@ export function Plinko() {
         ? `×${multiplier.toFixed(2)} getroffen: ${formatTokens(payout)} TOKEN Auszahlung.`
         : "Kein Multiplikator getroffen. Diese Runde endet ohne Auszahlung.",
     });
-    setIsDropping(false);
+    setActiveBalls((balls) => balls.filter((ball) => ball.id !== id));
   };
 
   const landingPosition = landingIndex === null ? 50 : ((landingIndex + 0.5) / multipliers.length) * 100;
@@ -105,7 +105,7 @@ export function Plinko() {
           <li>Wähle vor dem Fall ein Risikoprofil und deinen Einsatz.</li>
           <li>Der Ball landet in einem der unten sichtbaren Multiplikator-Felder.</li>
           <li>Deine Auszahlung ist Einsatz × getroffener Multiplikator.</li>
-          <li>Bei ×0 endet die Runde ohne Auszahlung.</li>
+          <li>Bei Multiplikatoren unter ×1 liegt die Auszahlung unter deinem Einsatz.</li>
         </ul>
       )}
     >
@@ -135,14 +135,7 @@ export function Plinko() {
               </div>
             ))}
           </div>
-          <motion.div
-            key={dropId}
-            className="plinko-ball"
-            initial={{ left: "50%", top: "4%", opacity: 0 }}
-            animate={isDropping ? { left: ballPath, top: ballPath.map((_, index) => `${4 + index * 5.8}%`), opacity: 1 } : { left: `${landingPosition}%`, top: "75%", opacity: 0 }}
-            transition={{ duration: prefersReducedMotion() ? 0.01 : 1.8, ease: "linear" }}
-            aria-hidden="true"
-          />
+          {activeBalls.map((ball) => <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 0 }} animate={{ left: ball.path, top: ball.path.map((_, index) => `${3 + index * 7}%`), opacity: 1, rotate: 540 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.15, ease: "easeInOut" }} aria-hidden="true" />)}
           <div className="plinko-multipliers">
             {multipliers.map((multiplier, index) => (
               <span key={`${risk}-${index}`} className={landingIndex === index && !isDropping ? "landed" : ""}>
@@ -156,8 +149,8 @@ export function Plinko() {
 
         <div className="game-controls">
           <BetControls bet={bet} onBetChange={updateBet} balance={balance} disabled={isDropping} />
-          <button type="button" className="game-action primary full-width" disabled={isDropping || balance < 1} onClick={() => void drop()}>
-            {isDropping ? "Ball fällt …" : `${formatTokens(bet)} TOKEN fallen lassen`}
+          <button type="button" className="game-action primary full-width" disabled={balance < 1} onClick={() => void drop()}>
+            {isDropping ? "Weitere Kugel fallen lassen" : `${formatTokens(bet)} TOKEN fallen lassen`}
           </button>
         </div>
 

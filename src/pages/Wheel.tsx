@@ -128,7 +128,7 @@ export function Wheel() {
             style={{ transform: `rotate(${rotation}deg)` }}
           >
             {SEGMENTS.map((segment, index) => {
-              const labelPoint = pointAt(index * SLICE + SLICE / 2, 93);
+              const labelPoint = pointAt(index * SLICE + SLICE / 2, 100);
               return (
                 <g key={index} className={winner === index && !isSpinning ? "wheel-segment active" : "wheel-segment"}>
                   <path d={wedgePath(index)} fill={segment.color} />
