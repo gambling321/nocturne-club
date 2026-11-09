@@ -72,13 +72,14 @@ export function Slots() {
       securePick(SLOT_SYMBOLS),
       securePick(SLOT_SYMBOLS),
     ];
-    await sleep(1200);
     setReels(finalReels);
-    for (let reel = 0; reel < finalReels.length; reel += 1) {
-      await sleep(650);
-      setStoppedReels((current) => [...current, reel]);
-    }
-
+    await sleep(1650);
+    setStoppedReels([0]);
+    await sleep(520);
+    setStoppedReels([0, 1]);
+    await sleep(650);
+    setStoppedReels([0, 1, 2]);
+    await sleep(2000);
     const outcome = resultFor(finalReels);
     const payout = outcome.multiplier > 0 ? payoutFor(stake, outcome.multiplier) : 0;
     const net = payout - stake;
@@ -118,8 +119,8 @@ export function Slots() {
           <div className="slot-machine-top"><span>NOCTURNE</span><strong>REELS</strong></div>
           <div className="slot-reels" aria-live="polite">
             {reels.map((symbol, index) => (
-              <div className={`slot-reel ${isSpinning && !stoppedReels.includes(index) ? "rolling" : ""}`} key={`${symbol.id}-${index}`}>
-                {isSpinning && !stoppedReels.includes(index) ? <div className="slot-reel-strip">{Array.from({ length: 15 }, (_, stripIndex) => { const item=SLOT_SYMBOLS[(stripIndex+index)%SLOT_SYMBOLS.length]!; return <span key={stripIndex} aria-hidden="true">{item.glyph}<small>{item.name}</small></span>; })}</div> : <><span aria-hidden="true">{symbol.glyph}</span><small>{symbol.name}</small></>}
+              <div className={`slot-reel ${isSpinning ? "rolling" : ""} ${stoppedReels.includes(index) ? "stopped" : ""}`} key={`${symbol.id}-${index}`}>
+                {isSpinning ? <div className="slot-reel-strip" style={{ "--stop-offset": "calc(-12 * var(--slot-symbol-height))", "--stop-delay": `${index * 0.25}s` } as import("react").CSSProperties}>{Array.from({ length: 15 }, (_, stripIndex) => { const item = stripIndex === 12 ? symbol : SLOT_SYMBOLS[(stripIndex + index) % SLOT_SYMBOLS.length]!; return <span key={stripIndex} aria-hidden="true">{item.glyph}<small>{item.name}</small></span>; })}</div> : <><span aria-hidden="true">{symbol.glyph}</span><small>{symbol.name}</small></>}
               </div>
             ))}
           </div>

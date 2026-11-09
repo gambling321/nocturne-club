@@ -190,8 +190,8 @@ function Slots({ index, progress }: { index: number; progress: { get: () => numb
         <mesh rotation={[0,0,Math.PI/2]} castShadow><cylinderGeometry args={[.56,.56,.62,48]}/><meshStandardMaterial color="#b58c4c" metalness={.53} roughness={.3}/></mesh>
         {reelSymbols[reelIndex]!.map((texture,symbolIndex)=>{
           const angle=symbolIndex*Math.PI/3;
-          return <mesh key={symbolIndex} position={[0,.555*Math.sin(angle),.555*Math.cos(angle)]} rotation={[-angle,0,0]}>
-            <planeGeometry args={[.58,.58]}/><meshBasicMaterial map={texture} toneMapped={false}/>
+          return <mesh key={symbolIndex} position={[0,.62*Math.sin(angle),.62*Math.cos(angle)]} rotation={[-angle,0,0]}>
+            <planeGeometry args={[.64,.76]}/><meshBasicMaterial map={texture} toneMapped={false} side={THREE.DoubleSide}/>
           </mesh>;
         })}
       </group>)}

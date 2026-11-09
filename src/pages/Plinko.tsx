@@ -135,7 +135,11 @@ export function Plinko() {
               </div>
             ))}
           </div>
-          {activeBalls.map((ball) => <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 0 }} animate={{ left: ball.path, top: ball.path.map((_, index) => `${3 + index * 7}%`), opacity: 1, rotate: 540 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.15, ease: "easeInOut" }} aria-hidden="true" />)}
+          {activeBalls.map((ball) => {
+            const fallTimes = ball.path.map((_, index) => Math.sqrt(index / (ball.path.length - 1)));
+            const fallHeights = ball.path.map((_, index) => `${3 + (index / (ball.path.length - 1)) ** 2 * 86}%`);
+            return <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 0 }} animate={{ left: ball.path, top: fallHeights, opacity: 1, rotate: 720 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.25, times: fallTimes, ease: "easeOut" }} aria-hidden="true" />;
+          })}
           <div className="plinko-multipliers">
             {multipliers.map((multiplier, index) => (
               <span key={`${risk}-${index}`} className={landingIndex === index && !isDropping ? "landed" : ""}>
