@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { BetControls } from "../components/BetControls";
 import { GameLayout } from "../components/GameLayout";
 import { ResultBanner, type ResultKind } from "../components/ResultBanner";
@@ -73,13 +74,7 @@ export function Slots() {
       securePick(SLOT_SYMBOLS),
     ];
     setReels(finalReels);
-    await sleep(1650);
-    setStoppedReels([0]);
-    await sleep(520);
-    setStoppedReels([0, 1]);
-    await sleep(650);
-    setStoppedReels([0, 1, 2]);
-    await sleep(2000);
+    await sleep(3600);
     const outcome = resultFor(finalReels);
     const payout = outcome.multiplier > 0 ? payoutFor(stake, outcome.multiplier) : 0;
     const net = payout - stake;
@@ -120,7 +115,7 @@ export function Slots() {
           <div className="slot-reels" aria-live="polite">
             {reels.map((symbol, index) => (
               <div className={`slot-reel ${isSpinning ? "rolling" : ""} ${stoppedReels.includes(index) ? "stopped" : ""}`} key={`${symbol.id}-${index}`}>
-                {isSpinning ? <div className="slot-reel-strip" style={{ "--stop-offset": "calc(-12 * var(--slot-symbol-height))", "--stop-delay": `${index * 0.25}s` } as import("react").CSSProperties}>{Array.from({ length: 15 }, (_, stripIndex) => { const item = stripIndex === 12 ? symbol : SLOT_SYMBOLS[(stripIndex + index) % SLOT_SYMBOLS.length]!; return <span key={stripIndex} aria-hidden="true">{item.glyph}<small>{item.name}</small></span>; })}</div> : <><span aria-hidden="true">{symbol.glyph}</span><small>{symbol.name}</small></>}
+                {isSpinning ? <motion.div className="slot-reel-strip" initial={{ y: 0 }} animate={{ y: [0, "-68%", "-76%", "-80%"] }} transition={{ duration: 2.6 + index * 0.5, times: [0, 0.45, 0.78, 1], ease: ["linear", "easeOut", "easeOut"] }} style={{ "--stop-offset": "calc(-12 * var(--slot-symbol-height))" } as import("react").CSSProperties}>{Array.from({ length: 15 }, (_, stripIndex) => { const item = stripIndex === 12 ? symbol : SLOT_SYMBOLS[(stripIndex + index) % SLOT_SYMBOLS.length]!; return <span key={stripIndex} aria-hidden="true">{item.glyph}<small>{item.name}</small></span>; })}</motion.div> : <><span aria-hidden="true">{symbol.glyph}</span><small>{symbol.name}</small></>}
               </div>
             ))}
           </div>

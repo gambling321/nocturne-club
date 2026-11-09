@@ -72,7 +72,7 @@ export function Plinko() {
     setActiveBalls((balls) => [...balls, { id, path, index }]);
     setLandingIndex(index);
     setFeedback({ kind: "neutral", message: activeBalls.length ? "Mehrere Kugeln fallen gleichzeitig …" : "Die Kugel findet ihren Weg durch das Pegboard …" });
-    await sleep(prefersReducedMotion() ? 100 : 2200);
+    await sleep(prefersReducedMotion() ? 100 : 3150);
 
     const payout = payoutFor(bet, multiplier);
     if (payout > 0) credit(payout);
@@ -137,8 +137,8 @@ export function Plinko() {
           </div>
           {activeBalls.map((ball) => {
             const fallTimes = ball.path.map((_, index) => Math.sqrt(index / (ball.path.length - 1)));
-            const fallHeights = ball.path.map((_, index) => `${3 + (index / (ball.path.length - 1)) ** 2 * 86}%`);
-            return <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 0 }} animate={{ left: ball.path, top: fallHeights, opacity: 1, rotate: 720 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.25, times: fallTimes, ease: "easeOut" }} aria-hidden="true" />;
+            const fallHeights = ball.path.map((_, index) => `${3 + (index / (ball.path.length - 1)) ** 2 * 81}%`);
+            return <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 1, scale: 1 }} animate={{ left: ball.path, top: fallHeights, opacity: 1, scale: 1, rotate: 900 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.65, times: fallTimes, ease: "easeOut" }} aria-hidden="true" />;
           })}
           <div className="plinko-multipliers">
             {multipliers.map((multiplier, index) => (
