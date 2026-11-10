@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { MotionConfig, motion } from "framer-motion";
 import { BetControls } from "../components/BetControls";
 import { GameLayout } from "../components/GameLayout";
 import { ResultBanner, type ResultKind } from "../components/ResultBanner";
@@ -23,10 +23,6 @@ const RISK_COPY: Record<Risk, { label: string; description: string }> = {
   mittel: { label: "Mittel", description: "In der Mitte kleine Werte, außen deutlich höhere Multiplikatoren." },
   hoch: { label: "Hoch", description: "Sehr hohe Außenfelder und kleine Werte nahe der Mitte." },
 };
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 export function Plinko() {
   const { balance, placeBet, credit } = useTokens();
@@ -72,7 +68,7 @@ export function Plinko() {
     setActiveBalls((balls) => [...balls, { id, path, index }]);
     setLandingIndex(index);
     setFeedback({ kind: "neutral", message: activeBalls.length ? "Mehrere Kugeln fallen gleichzeitig …" : "Die Kugel findet ihren Weg durch das Pegboard …" });
-    await sleep(prefersReducedMotion() ? 100 : 3150);
+    await sleep(3150);
 
     const payout = payoutFor(bet, multiplier);
     if (payout > 0) credit(payout);
@@ -135,11 +131,11 @@ export function Plinko() {
               </div>
             ))}
           </div>
-          {activeBalls.map((ball) => {
+          <MotionConfig reducedMotion="never">{activeBalls.map((ball) => {
             const fallTimes = ball.path.map((_, index) => Math.sqrt(index / (ball.path.length - 1)));
             const fallHeights = ball.path.map((_, index) => `${3 + (index / (ball.path.length - 1)) ** 2 * 81}%`);
-            return <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 1, scale: 1 }} animate={{ left: ball.path, top: fallHeights, opacity: 1, scale: 1, rotate: 900 }} transition={{ duration: prefersReducedMotion() ? .01 : 2.65, times: fallTimes, ease: "easeOut" }} aria-hidden="true" />;
-          })}
+            return <motion.div key={ball.id} className="plinko-ball" initial={{ left: "50%", top: "3%", opacity: 1, scale: 1 }} animate={{ left: ball.path, top: fallHeights, opacity: 1, scale: 1, rotate: 900 }} transition={{ duration: 2.65, times: fallTimes, ease: "easeOut" }} aria-hidden="true" />;
+          })}</MotionConfig>
           <div className="plinko-multipliers">
             {multipliers.map((multiplier, index) => (
               <span key={`${risk}-${index}`} className={landingIndex === index && !isDropping ? "landed" : ""}>

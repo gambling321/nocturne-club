@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from "@react-three/fiber";
-import { motion, useMotionValue, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion, useMotionValue, useScroll, useTransform } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
@@ -296,15 +296,14 @@ function Caption({ game, index, progress }: { game: GameMeta; index: number; pro
 }
 
 export function LobbyJourney({ games }: { games: GameMeta[] }) {
-  const ref = useRef<HTMLDivElement>(null); const reduced = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
   const smoothProgress = useMotionValue(0);
   return <section className="journey-shell" ref={ref} aria-label="Scroll-Reise durch die Spielwelten">
-    <div className="journey-stage"><Canvas camera={{position:[0,1.65,20],fov:49}} dpr={[1,1.5]} gl={{antialias:true,alpha:false,powerPreference:"high-performance"}}><World progress={smoothProgress} target={scrollYProgress}/></Canvas><div className="journey-vignette"/>
+    <div className="journey-stage"><Canvas fallback={<div className="journey-fallback"><p>Die 3D-Ansicht wird auf diesem Gerät nicht unterstützt.</p><div>{games.map((game) => <Link key={game.id} to={game.route}>{game.name}<ArrowRight size={14}/></Link>)}</div></div>} camera={{position:[0,1.65,20],fov:49}} dpr={[0.75,1.25]} gl={{antialias:false,alpha:false,powerPreference:"low-power",failIfMajorPerformanceCaveat:false}}><World progress={smoothProgress} target={scrollYProgress}/></Canvas><div className="journey-vignette"/>
       <div className="journey-captions">{games.map((game,index)=><Caption key={game.id} game={game} index={index} progress={smoothProgress}/>)}</div>
       <div className="journey-progress" aria-hidden="true"><motion.i style={{scaleX:smoothProgress,transformOrigin:"left"}}/></div>
     </div>
     <div className="journey-scroll-rail" aria-hidden="true">SCROLLE, UM DIE SPIELWELTEN ZU DURCHQUEREN</div>
-    {reduced && <div className="motion-note">Reduzierte Bewegung ist aktiv. Die Spielauswahl findest du jederzeit im Menü.</div>}
   </section>;
 }
